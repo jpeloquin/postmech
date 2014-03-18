@@ -1,0 +1,135 @@
+#!/usr/bin/env python
+
+import argparse
+import os
+import csv
+import numpy as np
+
+def read_instron_csv(fpath):
+    """Read data from an Instron csv file.
+
+    The function expects to find time, extension, and load data.  It
+    assumes that time is the first column.
+
+    """
+    t = []
+    d = []
+    p = []    
+    with open(fpath, 'rb') as f:
+        reader = csv.reader(f, delimiter=",", quotechar='"')
+        for i in range(6): # skip header
+            reader.next()
+        header = reader.next() # read column names
+        # Check that we arrived at the right row
+        assert header[0] == 'Time'
+        # Find Load and Extension columns
+        dind = header.index('Extension')
+        pind = header.index('Load')
+        units = reader.next() # read units
+        print("Reading " + header[dind] + " " + units[dind])
+        print("Reading " + header[pind] + " " + units[pind])
+        for row in reader:
+            t.append(float(row[0]))
+            d.append(float(row[dind]))
+            p.append(float(row[pind]))
+    t = np.array(t)
+    d = np.array(d)
+    p = np.array(p)
+    return t, d, p
+
+def image_scale(fpath):
+    """Reads `image_scale.csv` and calculates mm/px"""
+    with open(fpath, 'rb') as f:
+        reader = csv.reader(f)
+        dpx = float(reader.next()[0])
+        dmm = float(reader.next()[0])
+    scale = dmm / dpx
+    return scale
+
+def reference_length(fpath, scale):
+    with open(fpath, 'rb') as f:
+        reader = csv.reader(f)
+        l0 = float(reader.next()[0]) * scale
+    return l0
+
+def stretch_ratio(d, l0):
+    return (d + l0) / l0
+
+def stress(p, a):
+    """Calculate 1st Piola-Kirchoff stress.
+
+    Parameters
+    ----------
+    p : 1-D array or list
+       Load in Newtons
+    a : numeric
+       Area in meters
+
+    """
+    return np.array(p) / a
+
+if __name__ == "__main__":
+    # Arguments
+    s = 'Calculate strain from extension data recorded by Bluehill (Instron).'
+    parser = argparse.ArgumentParser(description=s)
+    parser.add_argument('input', 
+                        help='Path of Instron Raw Data csv file.')
+    parser.add_argument('--imdir',
+                        help='Path of image directory.')
+#    parser.add_argument('--scale',
+#                       help='Path to csv file containg scale measurements')
+#    parser.add_argument('--lref',
+#                       help='Path to csv file containing the reference '
+#                       'length (px).')
+    parser.add_argument('--notch', action='store_true',
+                        help='Flag.  If set, look for "notch_length.csv" and '
+                        '"ref_width.csv".  The cross-sectional area will be adjusted '
+                        'accordingly.')
+    parser.add_argument('-o', '--output', dest='outfile',
+                        default=None,
+                        help='Path of output file.  The default is to '
+                        'write the output file to the same directory as '
+                        'the input file.')
+    args = parser.parse_args()
+    # Argument defaults
+    head, tail = os.path.split(args.input)
+    head, tail = os.path.split(head)
+    if args.imdir:
+        imdir = args.imdir
+    else:
+        imdir = os.path.join(head, "images")
+    # Calculations
+    scale = mm_px(os.path.join(imdir, "image_scale.csv"))
+    l0 = reference_length(os.path.join(imdir, "ref_length.csv"),
+                          scale=scale)
+    t, d, p = read_instron_csv(args.input)
+    y = stretch_ratio(d, l0)
+    datadir = os.path.dirname(os.path.dirname(args.input))
+    fpath = os.path.join(datadir, "area.csv")
+    with open(fpath, 'r') as f:
+        reader = csv.reader(f)
+        area = float(reader.next()[0])
+    # Adjust for notch
+    if args.notch:
+        fpath = os.path.join(imdir, "notch_length.csv")
+        with open(fpath, 'rb') as f:
+            reader = csv.reader(f)
+            a = float(reader.next()[0])
+        fpath = os.path.join(imdir, "ref_width.csv")
+        with open(fpath, 'rb') as f:
+            reader = csv.reader(f)
+            w = float(reader.next()[0])
+        area = area * (1 - a / w)
+    s = stress(p, area)
+    # Write output
+    if args.outfile:
+        fpathout = args.outfile
+    else:
+        fpathout = os.path.join(datadir, "stress_strain.csv")
+    with open(fpathout, 'wb') as f:
+        writer = csv.writer(f, delimiter=',', quotechar='"')
+        writer.writerow(["Time (s)", "Stretch Ratio", "Stress (Pa)"])
+        for v in zip(t, y, s):
+            writer.writerow(v)
+    print("Wrote output to " + fpathout)
+    print("Max stress was {}".format(max(s)))
