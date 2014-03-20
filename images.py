@@ -14,6 +14,7 @@ $ choose_images IMAGE_INDEX.CSV
 import os, re, sys, csv
 import re
 import numpy as np
+import mechana as mech
 from mechana import instron
 
 def image_strain(imdir, mechcsv):
@@ -37,7 +38,7 @@ def image_strain(imdir, mechcsv):
     l0 = reference_length(os.path.join(imdir, 'ref_length.csv'), scale)
 
     # Load mechanical test data
-    t, d, p = read_instron_csv(mechcsv)
+    t, d, p = mech.instron.read_instron_csv(mechcsv)
     with open(os.path.join(imdir, 'ref_time.csv')) as f:
         reader = csv.reader(f)
         mech_reftime = float(reader.next()[0])
@@ -50,6 +51,21 @@ def image_strain(imdir, mechcsv):
     y_im = np.interp(imtimes, t, y)
 
     return zip(y_im, imnames)
+
+def image_scale(fpath):
+    """Reads `image_scale.csv` and calculates mm/px"""
+    with open(fpath, 'rb') as f:
+        reader = csv.reader(f)
+        dpx = float(reader.next()[0])
+        dmm = float(reader.next()[0])
+    scale = dmm / dpx
+    return scale
+
+def reference_length(fpath, scale):
+    with open(fpath, 'rb') as f:
+        reader = csv.reader(f)
+        l0 = float(reader.next()[0]) * scale
+    return l0
 
 def image_time(imname):
     """Parse image time from image filename.

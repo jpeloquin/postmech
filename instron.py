@@ -37,21 +37,6 @@ def read_instron_csv(fpath):
     p = np.array(p)
     return t, d, p
 
-def image_scale(fpath):
-    """Reads `image_scale.csv` and calculates mm/px"""
-    with open(fpath, 'rb') as f:
-        reader = csv.reader(f)
-        dpx = float(reader.next()[0])
-        dmm = float(reader.next()[0])
-    scale = dmm / dpx
-    return scale
-
-def reference_length(fpath, scale):
-    with open(fpath, 'rb') as f:
-        reader = csv.reader(f)
-        l0 = float(reader.next()[0]) * scale
-    return l0
-
 def stretch_ratio(d, l0):
     return (d + l0) / l0
 
