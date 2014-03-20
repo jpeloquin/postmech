@@ -123,7 +123,7 @@ def get_image_list(fpath):
     curr_phase = 'extra'
     image_index = dict((k, images.index(image_index[k]))
                        for k, v in image_index.iteritems()
-                       if v != 'ND')
+                       if v != 'NA')
     for i, fname in enumerate(images):
         if (i >= image_index['reference'] and 
             i < image_index['ramp_start']):
@@ -148,7 +148,7 @@ def move_extra(fpath):
             os.rename(os.path.join(imdir, fname),
                       os.path.join(undir, fname))
 
-def make_vic2d_lists(imidx, mechcsv):
+def make_vic2d_lists(imidx, mechcsv, interval=0):
     """List images for vic2d analysis.
 
     """
@@ -163,7 +163,7 @@ def make_vic2d_lists(imidx, mechcsv):
     selected_images = [imdict['reference'],
                        imdict['ramp_start']]
     t0 = image_time(imdict['ramp_start'])
-    if imdict['rupture'] != 'ND':
+    if imdict.get('rupture') is not None:
         last_image = imdict['rupture']
     else:
         last_image = imdict['end']
@@ -173,7 +173,7 @@ def make_vic2d_lists(imidx, mechcsv):
     for i, y in enumerate(stretch):
         t = image_time(imnames[i])
         if (t > t0 and t < t1 and
-            (y - yt > 0.01 or
+            (y - yt > interval or
              y1 - y < 0.01)):
             yt = y
             selected_images.append(imnames[i])
