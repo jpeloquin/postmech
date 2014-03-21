@@ -11,6 +11,10 @@ def read_instron_csv(fpath):
     The function expects to find time, extension, and load data.  It
     assumes that time is the first column.
 
+    Outputs
+    -------
+    time, extension, load : numpy array
+
     """
     t = []
     d = []

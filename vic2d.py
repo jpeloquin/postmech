@@ -6,6 +6,13 @@ import re
 def read_vic2d_export(fpath, impath, keys=['exx', 'eyy', 'exy']):
     """Read a csv file from vic2d into arrays.
 
+    Inputs
+    ------
+    fpath : string
+        Path to strain csv file exported from Vic-2D.
+    impath : string
+        Path to image corresponding to the strain file.
+
     Note
     ----
     It is assumed that Vic-2D uses 0-indexing for x and y.  The

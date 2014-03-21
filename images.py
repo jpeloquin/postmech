@@ -62,6 +62,7 @@ def image_scale(fpath):
     return scale
 
 def reference_length(fpath, scale):
+    """Reads ref_length.csv"""
     with open(fpath, 'rb') as f:
         reader = csv.reader(f)
         l0 = float(reader.next()[0]) * scale
