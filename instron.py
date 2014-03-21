@@ -30,8 +30,6 @@ def read_instron_csv(fpath):
         dind = header.index('Extension')
         pind = header.index('Load')
         units = reader.next() # read units
-        print("Reading " + header[dind] + " " + units[dind])
-        print("Reading " + header[pind] + " " + units[pind])
         for row in reader:
             t.append(float(row[0]))
             d.append(float(row[dind]))
