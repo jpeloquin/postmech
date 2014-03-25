@@ -18,7 +18,9 @@ import mechana as mech
 from mechana import instron
 
 def image_strain(imdir, mechcsv):
-    """Returns a list of (strain, image file name) tuples.
+    """Returns a list of (image name, strain) tuples.
+
+    The image names omit the file extension.
 
     The strain is based on Instron extension; not optical strain.
 
