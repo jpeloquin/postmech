@@ -15,4 +15,4 @@ def listcsvdir(directory):
                not f.startswith('.')
                and f.endswith('.csv'))
     abspaths = (path.abspath(path.join(directory, f)) for f in csvonly)
-    return list(abspaths)
+    return sorted(list(abspaths))
