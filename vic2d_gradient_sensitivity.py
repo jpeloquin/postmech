@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
-import mechana
-from mechana.images import image_scale, reference_length, image_strain
+# Part of the mechana package
+from mechana.images import image_strain
 import numpy as np
 import os
 import os.path as path
