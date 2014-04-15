@@ -32,7 +32,7 @@ def image_strain(imdir, mechcsv):
             imnames.append(fname)
     imnames.sort()
     imdict = read_image_index(os.path.join(imdir, 'image_index.csv'))
-    reftime = image_time(imdict['reference'])
+    reftime = image_time(imdict["ref_time"])
     imtimes = [image_time(n) - reftime for n in imnames]
     scale = image_scale(os.path.join(imdir, 'image_scale.csv'))
 
@@ -128,7 +128,7 @@ def get_image_list(fpath):
                        for k, v in image_index.iteritems()
                        if v != 'NA')
     for i, fname in enumerate(images):
-        if (i >= image_index['reference'] and 
+        if (i >= image_index['ref_time'] and 
             i < image_index['ramp_start']):
             curr_phase = 'preconditioning'
         elif (i >= image_index['ramp_start'] and
@@ -143,27 +143,41 @@ def move_extra(fpath):
     """Moves extra images to 'unneeded' folder.
 
     """
+    fpath = os.path.abspath(fpath)
     imlist = get_image_list(fpath)
     imdir = os.path.dirname(fpath)
     undir = os.path.join(imdir, "unneeded")
+    if not os.path.exists(undir):
+        os.makedirs(undir)
     for fname, phase in imlist:
         if phase == 'extra':
             os.rename(os.path.join(imdir, fname),
                       os.path.join(undir, fname))
 
-def make_vic2d_lists(imidx, mechcsv, interval=0):
+def make_vic2d_lists(imidx, mechcsv, interval=0.01, highres=None):
     """List images for vic2d analysis.
 
+    Inputs
+    ------
+    highres : tuple
+        If an image has a stretch ratio >= highres[0] and <=
+        highres[1], it will be included in the list even if it would
+        be skipped according the interval setting.
+
     """
+    # Ensure absolute paths
+    imidx = os.path.abspath(imidx)
+    mechcsv = os.path.abspath(mechcsv)
+
     imdir = os.path.dirname(imidx)
     imdict = read_image_index(imidx)
-    stretch, imnames = zip(*image_strain(imdir, mechcsv))
+    imnames, stretch = zip(*image_strain(imdir, mechcsv))
     imlist = get_image_list(imidx)
 
-    reftime = image_time(imdict['reference'])
+    reftime = image_time(imdict['ref_time'])
 
     # Choose images for ramp
-    selected_images = [imdict['reference'],
+    selected_images = [imdict['zero_strain'],
                        imdict['ramp_start']]
     t0 = image_time(imdict['ramp_start'])
     if imdict.get('rupture') is not None:
