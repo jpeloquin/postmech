@@ -189,9 +189,11 @@ def make_vic2d_lists(imidx, mechcsv, interval=0.01, highres=None):
     yt = 0
     for i, y in enumerate(stretch):
         t = image_time(imnames[i])
-        if (t > t0 and t < t1 and
-            (y - yt > interval or
-             y1 - y < 0.01)):
+        if highres is not None:
+            inhighres = (y >= highres[0] and y <= highres[1])
+        else:
+            inhighres = False
+        if (t > t0 and t < t1 and (y - yt > interval or inhighres)):
             yt = y
             selected_images.append(imnames[i])
     # Write image list
