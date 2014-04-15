@@ -4,6 +4,7 @@ import argparse
 import os
 import csv
 import numpy as np
+import mechana
 
 def read_instron_csv(fpath):
     """Read data from an Instron csv file.
@@ -86,9 +87,11 @@ if __name__ == "__main__":
     else:
         imdir = os.path.join(head, "images")
     # Calculations
-    scale = mm_px(os.path.join(imdir, "image_scale.csv"))
-    l0 = reference_length(os.path.join(imdir, "ref_length.csv"),
-                          scale=scale)
+    scale = mechana.images.image_scale(os.path.join(imdir,
+                                                    "image_scale.csv"))
+    l0 = mechana.images.reference_length(os.path.join(imdir,
+                                                      "ref_length.csv"),
+                                         scale=scale)
     t, d, p = read_instron_csv(args.input)
     y = stretch_ratio(d, l0)
     datadir = os.path.dirname(os.path.dirname(args.input))
