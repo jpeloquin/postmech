@@ -122,4 +122,4 @@ if __name__ == "__main__":
         for v in zip(t, y, s):
             writer.writerow(v)
     print("Wrote output to " + fpathout)
-    print("Max stress was {}".format(max(s)))
+    print("Max stress was {:.2e} Pa (units assumed)".format(max(s)))
