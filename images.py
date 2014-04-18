@@ -14,8 +14,17 @@ $ choose_images IMAGE_INDEX.CSV
 import os, re, sys, csv
 import re
 import numpy as np
-import mechana as mech
+import mechana
 from mechana import instron
+
+def name2key(fpath):
+    """Convert image name into a key.
+
+    """
+    s = os.path.splitext(os.path.basename(fpath))[0]
+    pattern = r'(?P<key>cam[0-9]_[0-9]+)[0-9._A-Za-z]+(?:.tiff)?'
+    m = re.search(pattern, s)
+    return m.group('key')
 
 def image_strain(imdir, mechcsv):
     """Returns a list of (image name, strain) tuples.
@@ -40,7 +49,7 @@ def image_strain(imdir, mechcsv):
     l0 = reference_length(os.path.join(imdir, 'ref_length.csv'), scale)
 
     # Load mechanical test data
-    t, d, p = mech.instron.read_instron_csv(mechcsv)
+    t, d, p = mechana.instron.read_instron_csv(mechcsv)
     with open(os.path.join(imdir, 'ref_time.csv')) as f:
         reader = csv.reader(f)
         mech_reftime = float(reader.next()[0])
@@ -52,7 +61,8 @@ def image_strain(imdir, mechcsv):
     # Interpolate stretch at image times
     y_im = np.interp(imtimes, t, y)
 
-    return zip(imnames, y_im)
+    keys = [name2key(s) for s in imnames]
+    return zip(keys, y_im)
 
 def image_scale(fpath):
     """Reads `image_scale.csv` and calculates mm/px"""

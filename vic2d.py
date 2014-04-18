@@ -10,6 +10,8 @@ import hashlib
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
+import mechana
+from mechana.images import name2key, image_strain
 
 # Register diverging colormap
 
@@ -55,45 +57,50 @@ def listcsvs(directory):
 
     """
     files = sorted(os.listdir(directory))
-    csvonly = (f for f in files if
-               not f.startswith('.')
-               and f.endswith('.csv'))
-    abspaths = (path.abspath(path.join(directory, f)) for f in csvonly)
+    pattern = r'cam[0-9]_[0-9]+_[0-9]+.[0-9]{3}.csv'
+    files = [f for f in files
+             if re.match(pattern, f) is not None]
+    abspaths = (path.abspath(path.join(directory, f)) for f in files)
     return sorted(list(abspaths))
 
-def hdf5ify(csvfiles, outfile=None):
-    """Read csv files and store them in an hdf5 file for faster reads.
+def readvcsv(f):
+    df = pd.read_csv(f, skipinitialspace=True).dropna(how='all')
+    return df
+
+def hdf5ify(fdir, outfile=None):
+    """Read csv files and store them in an hdf5 file.
+
+    Storing the data in a binary format is intended to permit faster
+    reads and interoperability between sofware packages.
 
     """
+    # Define output path
+    if outfile is None:
+        h5path = os.path.join(fdir, 'data.h5')
     def hashfile(fpath):
         with open(fpath, 'rb') as f:
             fhash = hashlib.sha1(f.read()).hexdigest()
         return fhash
-    def getkey(fpath):
-        """Convert image name into a key.
-
-        """
-        s = os.path.splitext(os.path.basename(fpath))[0]
-        pattern = r'(?P<key>cam[0-9]_[0-9]+)[0-9._A-Za-z]+'
-        m = re.search(pattern, s)
-        return m.group('key')
-    # Create lists of data
-    key = [getkey(f) for f in csvfiles]
+    # Create list of csv files named after images
+    csvfiles = listcsvs(fdir)
+    key = [name2key(f) for f in csvfiles]
     fhash = [hashfile(f) for f in csvfiles]
-    data = [pd.read_csv(f).dropna(how='all') for f in csvfiles]
-    attribs = pd.DataFrame.from_dict({'key': key,
-                                      'file_hash': fhash})
-    # Write to hdf5
-    if outfile is None:
-        outdir = os.path.dirname(csvfiles[0])
-        h5path = os.path.join(outdir, 'data.h5')
-        print h5path
-    if os.path.exists(h5path): # make sure existing file is cleared
-        os.remove(h5path)
-    store = pd.HDFStore(h5path)
-    store.put('metadata', attribs)
-    for k, df in zip(key, data):
-        store.put(k, df)
+    # Open hdf5 file
+    store = pd.HDFStore(h5path, compression='zlib')
+    # Read (or create) metadata entry
+    try:
+        mdata = store['metadata']
+        store.remove('metadata')
+    except KeyError:
+        mdata = pd.DataFrame.from_dict({'key': key,
+                                        'file_hash': fhash})
+    store.put('metadata', mdata)
+    storehashes = dict(zip(mdata['key'], mdata['file_hash']))
+    # Check if the hdf5 needs updating
+    for f, k, h in zip(csvfiles, key, fhash):
+        if '/' + k not in store.keys() or h != storehashes[k]:
+            df = readvcsv(f)
+            store.put(k, df)
     store.close()
 
 def strainimg(df, field):
