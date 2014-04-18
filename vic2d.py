@@ -6,6 +6,7 @@ from os import path
 import h5py
 from collections import defaultdict
 import pandas as pd
+import hashlib
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
@@ -59,6 +60,60 @@ def listcsvs(directory):
                and f.endswith('.csv'))
     abspaths = (path.abspath(path.join(directory, f)) for f in csvonly)
     return sorted(list(abspaths))
+
+def hdf5ify(csvfiles, outfile=None):
+    """Read csv files and store them in an hdf5 file for faster reads.
+
+    """
+    def hashfile(fpath):
+        with open(fpath, 'rb') as f:
+            fhash = hashlib.sha1(f.read()).hexdigest()
+        return fhash
+    def getkey(fpath):
+        """Convert image name into a key.
+
+        """
+        s = os.path.splitext(os.path.basename(fpath))[0]
+        pattern = r'(?P<key>cam[0-9]_[0-9]+)[0-9._A-Za-z]+'
+        m = re.search(pattern, s)
+        return m.group('key')
+    # Create lists of data
+    key = [getkey(f) for f in csvfiles]
+    fhash = [hashfile(f) for f in csvfiles]
+    data = [pd.read_csv(f).dropna(how='all') for f in csvfiles]
+    attribs = pd.DataFrame.from_dict({'key': key,
+                                      'file_hash': fhash})
+    # Write to hdf5
+    if outfile is None:
+        outdir = os.path.dirname(csvfiles[0])
+        h5path = os.path.join(outdir, 'data.h5')
+        print h5path
+    if os.path.exists(h5path): # make sure existing file is cleared
+        os.remove(h5path)
+    store = pd.HDFStore(h5path)
+    store.put('metadata', attribs)
+    for k, df in zip(key, data):
+        store.put(k, df)
+    store.close()
+
+def strainimg(df, field):
+    """Create a strain image from a list of values.
+
+    """
+    xmin = min(df['x'])
+    xmax = max(df['x'])
+    ymin = min(df['y'])
+    ymax = max(df['y'])
+    strainfield = np.empty((ymax+1, xmax+1))
+    strainfield.fill(np.nan)
+    for row in df.iterrows():
+        r = row[1]
+        try:
+            strainfield[(r['y'], r['x'])] = r[field]
+        except IndexError:
+            print('Warning: x or y index in row {} '
+                  'is blank.'.format(row[0]))
+    return strainfield
 
 def plot_strains(csvpath, figpath):
     """Plot strain from a Vic-2D .csv file.
