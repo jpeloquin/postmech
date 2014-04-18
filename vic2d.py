@@ -49,7 +49,7 @@ cdict_div = {'red': ((0, 0, 0.0941),
 matplotlib.cm.register_cmap(name="lab_diverging",
                             data=cdict_div, lut=256)
 
-def listcsvdir(directory):
+def listcsvs(directory):
     """List csv files in a directory.
 
     """
