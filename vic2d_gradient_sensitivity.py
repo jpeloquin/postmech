@@ -47,14 +47,13 @@ cdict_div = {'red': ((0, 0, 0.0941),
 matplotlib.cm.register_cmap(name="lab_diverging",
                             data=cdict_div, lut=256)
 
-def summarize_vic2d(files, imindex):
+def summarize_vic2d(files, imdir):
     """Calculate summary statistics for Vic-2D data.
 
     Note: If the Vic-2D data were exported including blank regions,
     you will find many, many zeros in the data.
 
     """
-    imdir = path.dirname(imindex)
     with open(path.join(imdir, 'mechdata_path.txt')) as f:
         mechpath = path.join(imdir, (f.read().strip()))
     imstrain = dict(image_strain(imdir, mechpath))
