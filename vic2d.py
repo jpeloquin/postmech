@@ -1,11 +1,13 @@
 import csv
 import numpy as np
+from scipy.sparse import coo_matrix
 from PIL import Image
 import re, os
 from os import path
 import h5py
 from collections import defaultdict
 import pandas as pd
+import h5py
 import hashlib
 import matplotlib
 import matplotlib.pyplot as plt
@@ -60,48 +62,144 @@ def listcsvs(directory):
     pattern = r'cam[0-9]_[0-9]+_[0-9]+.[0-9]{3}.csv'
     files = [f for f in files
              if re.match(pattern, f) is not None]
-    abspaths = (path.abspath(path.join(directory, f)) for f in files)
-    return sorted(list(abspaths))
+    return sorted(list(files))
 
-def readvcsv(f):
+def readv2dcsv(f):
     df = pd.read_csv(f, skipinitialspace=True).dropna(how='all')
     return df
 
-def hdf5ify(fdir, outfile=None):
+class Vic2DDataset:
+    """A class to represent a set of Vic-2D data files.
+
+    """
+    h5store = None
+    keys = []
+    hashes = []
+    csvpaths = []
+
+    def __init__(self, vicdir):
+        # The class uses an hdf5 file as the data storage location
+        h5path = os.path.join(vicdir, 'data.h5')
+        if not os.path.exists(h5path):
+            print h5path + ' does not exist; building.'
+            hdf5ify(vicdir)
+            self.h5store = h5py.File(h5path, 'r')
+        else:
+            self.load_h5(h5path)
+            # Make sure the h5 file is up to date
+            uptodate = True
+            csvfiles = [os.path.join(vicdir, f) for f in listcsvs(vicdir)]
+            csvhashes = [hashfile(f) for f in csvfiles]
+            keys = [mechana.images.name2key(f) for f in csvfiles]
+            h5hashdict = dict(zip(self.keys, self.hashes))
+            csvhashdict = dict(zip(keys, csvhashes))
+            allkeys = set(keys + self.keys.value.tolist())
+            for k in allkeys:
+                if k not in self.keys or k not in keys:
+                    # a frame exists in only one location
+                    uptodate = False
+                if h5hashdict[k] != csvhashdict[k]:
+                    # data is out of sync
+                    uptodate = False
+            if not uptodate:
+                print h5path + ' not up to date; rebuilding.'
+                self.h5store.close()
+                os.remove(h5path)
+                hdf5ify(vicdir)
+                self.load_h5(h5path)
+
+    def load_h5(self, h5path):
+        self.h5store = h5py.File(h5path, 'r')
+        self.keys = self.h5store["keys"]
+        self.hashes = self.h5store["csvhashes"]
+        self.csvpaths = self.h5store["csvpaths"]
+
+    def __getitem__(self, key):
+        group = self.h5store[key]
+        fields = group.keys()
+        columns = [group[k].value for k in fields]
+        df = pd.DataFrame.from_dict(dict(zip(fields, columns)))
+        return df
+
+    def __len__(self):
+        return len(self.keys)
+
+    def __del__(self):
+        """Close the h5 file on object destruction.
+
+        """
+        self.h5store.close()
+
+def hashfile(fpath):
+    with open(fpath, 'rb') as f:
+        fhash = hashlib.sha1(f.read()).hexdigest()
+    return fhash
+
+def hdf5ify(fdir, h5path=None):
     """Read csv files and store them in an hdf5 file.
 
     Storing the data in a binary format is intended to permit faster
     reads and interoperability between sofware packages.
 
     """
+    savecolumns = ['x', 'y', 'u', 'v', 'exx', 'eyy', 'exy', 'gamma']
+
     # Define output path
-    if outfile is None:
+    if h5path is None:
         h5path = os.path.join(fdir, 'data.h5')
-    def hashfile(fpath):
-        with open(fpath, 'rb') as f:
-            fhash = hashlib.sha1(f.read()).hexdigest()
-        return fhash
-    # Create list of csv files named after images
-    csvfiles = listcsvs(fdir)
+    # Create list of vic2d csv files in the directory
+    csvfiles = [os.path.join(fdir, f) for f in listcsvs(fdir)]
     key = [name2key(f) for f in csvfiles]
-    fhash = [hashfile(f) for f in csvfiles]
-    # Open hdf5 file
-    store = pd.HDFStore(h5path, compression='zlib')
-    # Read (or create) metadata entry
-    try:
-        mdata = store['metadata']
-        store.remove('metadata')
-    except KeyError:
-        mdata = pd.DataFrame.from_dict({'key': key,
-                                        'file_hash': fhash})
-    store.put('metadata', mdata)
-    storehashes = dict(zip(mdata['key'], mdata['file_hash']))
-    # Check if the hdf5 needs updating
-    for f, k, h in zip(csvfiles, key, fhash):
-        if '/' + k not in store.keys() or h != storehashes[k]:
-            df = readvcsv(f)
-            store.put(k, df)
-    store.close()
+    fhashes = [hashfile(f) for f in csvfiles]
+    hashdict = dict(zip(key, fhashes))
+    fpdict = dict(zip(key, csvfiles))
+    mdata = pd.DataFrame.from_dict({'key': key,
+                                    'hash': fhashes,
+                                    'csvpath': csvfiles})
+    with h5py.File(h5path, 'w') as h5store:
+        h5store.create_dataset("keys", data=key)
+        h5store.create_dataset("csvpaths",
+            data=[os.path.basename(f) for f in csvfiles])
+        h5store.create_dataset("csvhashes", data=fhashes)
+        for k, fp in zip(key, csvfiles):
+            df = readv2dcsv(fp)
+            grp = h5store.create_group(k)
+            for c in savecolumns:
+                grp.create_dataset(c, data=df[c])
+
+def summarize_vic2d(vicdir, imdir):
+    """Calculate summary statistics for Vic-2D data.
+
+    Note: If the Vic-2D data were exported including blank regions,
+    you will find many, many zeros in the data.
+
+    """
+    with open(path.join(imdir, 'mechdata_path.txt')) as f:
+        mechpath = path.join(imdir, (f.read().strip()))
+    imstrain = dict(image_strain(imdir, mechpath))
+    fields = ['exx', 'eyy', 'exy']
+    # Initialize output
+    q05 = {k: [] for k in fields}
+    q95 = {k: [] for k in fields}
+    q50 = {k: [] for k in fields}
+    strain = []
+    keys = []
+    vdset = mechana.vic2d.Vic2DDataset(vicdir)
+    for k in vdset.keys:
+        df = vdset[k]
+        keys.append(k)
+        strain.append(imstrain[k])
+        for field in fields:
+            q = np.percentile(df[field], [5, 50, 95])
+            q05[field].append(q[0])
+            q50[field].append(q[1])
+            q95[field].append(q[2])
+    out = {'key': keys,
+           'strain': strain,
+           'q05': q05,
+           'median': q50,
+           'q95': q95}
+    return out
 
 def strainimg(df, field):
     """Create a strain image from a list of values.
@@ -113,13 +211,18 @@ def strainimg(df, field):
     ymax = max(df['y'])
     strainfield = np.empty((ymax+1, xmax+1))
     strainfield.fill(np.nan)
-    for row in df.iterrows():
-        r = row[1]
-        try:
-            strainfield[(r['y'], r['x'])] = r[field]
-        except IndexError:
-            print('Warning: x or y index in row {} '
-                  'is blank.'.format(row[0]))
+    x = df['x']
+    y = df['y']
+    v = df[field]
+    ind = zip(y, x)
+    strainfield[[y, x]] = v
+    #for row in df.iterrows():
+    #    r = row[1]
+    #    try:
+    #        strainfield[(r['y'], r['x'])] = r[field]
+    #    except IndexError:
+    #    print('Warning: x or y index in row {} '
+    #    'is blank.'.format(row[0]))
     return strainfield
 
 def plot_strains(csvpath, figpath):
@@ -137,13 +240,13 @@ def plot_strains(csvpath, figpath):
     def strainimg(df, field):
         strainfield = np.empty((ymax+1, xmax+1))
         strainfield.fill(np.nan)
-        for row in df.iterrows():
-            r = row[1]
-            try:
-                strainfield[(r['y'], r['x'])] = r[field]
-            except IndexError:
-                print('Warning: x or y index in row {} '
-                      'is blank.'.format(row[0]))
+        x = df['x']
+        y = df['y']
+        v = df[field]
+        ind = zip(y, x)
+        strainfield[[y, x]] = v
+        #for i, j, val in zip(y, x, v):
+        #    strainfield[i, j] = val
         return strainfield
 
     ## Initialize figure

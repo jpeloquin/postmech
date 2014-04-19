@@ -22,7 +22,7 @@ def name2key(fpath):
 
     """
     s = os.path.splitext(os.path.basename(fpath))[0]
-    pattern = r'(?P<key>cam[0-9]_[0-9]+)[0-9._A-Za-z]+(?:.tiff)?'
+    pattern = r'(?P<key>cam[0-9]_[0-9]+)[0-9._A-Za-z]+(?:.tiff|.csv|.tif)?'
     m = re.search(pattern, s)
     return m.group('key')
 
