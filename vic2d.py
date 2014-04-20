@@ -142,7 +142,7 @@ def hdf5ify(fdir, h5path=None):
     reads and interoperability between sofware packages.
 
     """
-    savecolumns = ['x', 'y', 'u', 'v', 'exx', 'eyy', 'exy', 'gamma']
+    savecolumns = ['x', 'y', 'u', 'v', 'exx', 'eyy', 'exy']
 
     # Define output path
     if h5path is None:
@@ -165,7 +165,11 @@ def hdf5ify(fdir, h5path=None):
             df = readv2dcsv(fp)
             grp = h5store.create_group(k)
             for c in savecolumns:
-                grp.create_dataset(c, data=df[c])
+                try:
+                    grp.create_dataset(c, data=df[c])
+                except KeyError:
+                    print ('Error reading file: ' + fp)
+                    raise
 
 def summarize_vic2d(vicdir, imdir):
     """Calculate summary statistics for Vic-2D data.
