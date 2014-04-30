@@ -110,6 +110,10 @@ if __name__ == "__main__":
             reader = csv.reader(f)
             w = float(reader.next()[0])
         area = area * (1 - a / w)
+    elif os.path.exists(os.path.join(imdir, "notch_length.csv")):
+        print("\nWarning: notch_length.csv exists, but the --notch "
+              "flag was not specified.  Stress will be calculated "
+              "as if the specimen is crack-free.\n")
     s = stress(p, area)
     # Write output
     if args.outfile:
