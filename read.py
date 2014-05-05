@@ -52,5 +52,5 @@ def bose_data(fpath):
     if "Disp" in columns:
         assert units[columns.index("Disp")] == "mm"
         data["Disp"] = data["Disp"] / 1000
-        data = data.rename(columns = {'Disp': 'Displacement (m)'})
+        data = data.rename(columns = {'Disp': 'Position (m)'})
     return data
