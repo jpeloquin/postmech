@@ -13,24 +13,44 @@ def bose_data(fpath):
     byte, so these data files are not strictly plain text.
 
     """
-    with open(fpath, 'rb') as f:
-        lines = f.readlines()
-        columns = lines[2]
-        units = lines[3]
     def parseline(s):
         l = s.split(",")[:-1]
         l = [s[1:-1].strip() for s in l]
         return l
-    columns = parseline(columns)
-    units = parseline(units)
-    data = pd.read_csv(fpath, header=2, names=columns,
-                       skiprows=1, index_col=False)
+
+    # Read the file
+    with open(fpath, 'rb') as f:
+        lines = f.readlines()
+
+    # Find header row and units
+    header_row = None
+    for i in xrange(5):
+        line = parseline(lines[i])
+        if len(line) > 0 and line[0] == "Elapsed Time":
+            header_row = i
+            break
+    if header_row is None:
+        raise Exception("No header row found in first 6 lines of "
+                        + fpath)
+    columns = parseline(lines[header_row])
+    units = parseline(lines[header_row + 1])
+
+    # Read data, skipping blank lines
+    data = dict(zip(columns, [list() for a in columns]))
+    for i in xrange(header_row + 2, len(lines)):
+        line = parseline(lines[i])
+        if len(line) > 0:
+            for k, v in zip(columns, line):
+                data[k].append(float(v))
+    data = pd.DataFrame.from_dict(data)
+
+    # Rename columns and check units
+    data = data.rename(columns = {'Elapsed Time': 'Time (s)'})
+    if "Load" in columns:
+        assert units[columns.index("Load")] == "N"
+        data = data.rename(columns = {'Load': 'Load (N)'})
     if "Disp" in columns:
-        unit = units[columns.index("Disp")]
-        if unit == "mm":
-            data["Disp"] = data["Disp"] / 1000
-    if "Elapsed Time" in columns:
-        idx = columns.index("Elapsed Time")
-        columns[idx] = "Time"
-        data.columns = columns
+        assert units[columns.index("Disp")] == "mm"
+        data["Disp"] = data["Disp"] / 1000
+        data = data.rename(columns = {'Disp': 'Displacement (m)'})
     return data
