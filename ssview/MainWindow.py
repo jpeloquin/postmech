@@ -1,5 +1,5 @@
 from PyQt4 import QtGui, QtCore, uic
-from PyQt4.QtCore import pyqtSlot
+from PyQt4.QtCore import pyqtSlot, pyqtSignal
 import pyqtgraph as pg
 import numpy as np
 import testdataIO
@@ -8,11 +8,18 @@ from PIL import Image
 import csv
 from operator import itemgetter
 
-from StressStrainVideoWidget import StressStrainVideoWidget
+from data_gui import DataView
 
 class MainWindow(QtGui.QMainWindow):
 
-    # mwidg : StressStrainVideoWidget
+    # Variables
+    currentfile = None
+
+    # Gui objects
+    data_view = None
+
+    # Signals
+    signalDataChanged = pyqtSignal()
 
     def __init__(self, parent=None):
         # Initialize the Qt parts of the UI
@@ -20,35 +27,20 @@ class MainWindow(QtGui.QMainWindow):
         codedir = os.path.dirname(os.path.abspath(__file__))
         uic.loadUi(os.path.join(codedir, 'MainWindow.ui'), self)
         # Initialize the python parts of the UI
+        self.data_view = DataView()
         self.actionOpen.triggered.connect(self.open_file)
         self.actionQuit.triggered.connect(QtGui.qApp.quit)
-        self.mwidg = StressStrainVideoWidget()
-        self.setCentralWidget(self.mwidg)
+        self.setCentralWidget(self.data_view)
 
     def open_file(self):
         # Load mechanical data
         fpath = str(QtGui.QFileDialog.getOpenFileName(self,
-            'Open stress & strain csv file'))
-        with open(fpath, 'rb') as f:
-            reader = csv.reader(f, delimiter=",")
-            reader.next() # skip header
-            data = zip(*[(float(t), float(y), float(s)) 
-                         for t, y, s in reader])
-            time = data[0]
-            stretch = data[1]
-            stress = data[2]
-        self.mwidg.update_mechdata(time, stretch, stress)
-        # Load images
-        ssdir = os.path.dirname(fpath)
-        imdir = os.path.join(ssdir, "images")
-        if not os.path.isdir(imdir):
-            imdir = os.path.join(ssdir, "..", "images")
-        imlist = self.load_images(imdir)
-        d = zip(*imlist)
-        self.mwidg.imstack.update_data(times=d[0],
-                                       images=d[1])
-        self.mwidg.signalDataChanged.emit()
+            'Open test data JSON file'))
+        self.currentfile = fpath
+        self.data_view.load_data(fpath)
 
+        #self.mwidg.imstack.update_data(times=d[0],
+        #                               images=d[1])        
 
     def load_images(self, imdir):
         """Load images into memory and find time of each frame.
@@ -82,7 +74,6 @@ class MainWindow(QtGui.QMainWindow):
             fpath = os.path.join(imdir, fname)
             images.append(np.array(Image.open(fpath)).T)
         return sorted(zip(imtime, images))
-
 
 def main():
     import sys
