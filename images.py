@@ -21,7 +21,7 @@ def name2key(fpath):
     """Convert image name into a key.
 
     """
-    s = os.path.splitext(os.path.basename(fpath))[0]
+    s = os.path.basename(fpath)
     pattern = r'(?P<key>cam[0-9]_[0-9]+)[0-9._A-Za-z]+(?:.tiff|.csv|.tif)?'
     m = re.search(pattern, s)
     return m.group('key')
