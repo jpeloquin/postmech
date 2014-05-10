@@ -62,6 +62,7 @@ def listcsvs(directory):
     pattern = r'cam[0-9]_[0-9]+_[0-9]+.[0-9]{3}.csv'
     files = [f for f in files
              if re.match(pattern, f) is not None]
+    files = [os.path.join(directory, f) for f in files]
     return sorted(list(files))
 
 def readv2dcsv(f):
