@@ -17,8 +17,8 @@ import numpy as np
 import mechana
 from mechana import instron
 
-def name2key(fpath):
-    """Convert image name into a key.
+def image_id(fpath):
+    """Convert image name into a unique id.
 
     """
     s = os.path.basename(fpath)

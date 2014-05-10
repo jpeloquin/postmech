@@ -13,7 +13,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import mechana
-from mechana.images import name2key, image_strain
+from mechana.images import image_id, image_strain
 
 # Register diverging colormap
 
@@ -90,7 +90,7 @@ class Vic2DDataset:
             uptodate = True
             csvfiles = [os.path.join(vicdir, f) for f in listcsvs(vicdir)]
             csvhashes = [hashfile(f) for f in csvfiles]
-            keys = [mechana.images.name2key(f) for f in csvfiles]
+            keys = [mechana.images.image_id(f) for f in csvfiles]
             h5hashdict = dict(zip(self.keys, self.hashes))
             csvhashdict = dict(zip(keys, csvhashes))
             allkeys = set(keys + self.keys.value.tolist())
@@ -149,7 +149,7 @@ def hdf5ify(fdir, h5path=None):
         h5path = os.path.join(fdir, 'data.h5')
     # Create list of vic2d csv files in the directory
     csvfiles = [os.path.join(fdir, f) for f in listcsvs(fdir)]
-    key = [name2key(f) for f in csvfiles]
+    key = [image_id(f) for f in csvfiles]
     fhashes = [hashfile(f) for f in csvfiles]
     hashdict = dict(zip(key, fhashes))
     fpdict = dict(zip(key, csvfiles))
