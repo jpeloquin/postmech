@@ -103,6 +103,17 @@ def read_image_index(fpath):
             image_index[row[0]] = row[1]
     return image_index
 
+def list_images(directory):
+    """List image files in a directory.
+
+    """
+    files = sorted(os.listdir(directory))
+    pattern = r'cam0_[0-9]+_[0-9]+.[0-9]{3}.tiff'
+    files = [f for f in files
+             if re.match(pattern, f) is not None]
+    files = [os.path.join(directory, f) for f in files]
+    return sorted(list(files))
+
 def get_image_list(fpath):
     """Returns list of images and which test phase they belong to.
 
