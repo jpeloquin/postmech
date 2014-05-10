@@ -89,9 +89,11 @@ if __name__ == "__main__":
     # Calculations
     scale = mechana.images.image_scale(os.path.join(imdir,
                                                     "image_scale.csv"))
-    l0 = mechana.images.reference_length(os.path.join(imdir,
-                                                      "ref_length.csv"),
-                                         scale=scale)
+    # read reference length
+    fpath = os.path.join(datadir, "reference_length.csv")
+    with open(fpath, 'rb') as f:
+        reader = csv.reader(f)
+        l0 = float(reader.next()[0])
     t, d, p = read_instron_csv(args.input)
     y = stretch_ratio(d, l0)
     datadir = os.path.dirname(os.path.dirname(args.input))
