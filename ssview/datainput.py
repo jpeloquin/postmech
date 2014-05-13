@@ -5,11 +5,13 @@ import mechana
 import matplotlib.image as mpimg
 
 def debug_trace():
-  '''Set a tracepoint in the Python debugger that works with Qt'''
-  from PyQt4.QtCore import pyqtRemoveInputHook
-  from pdb import set_trace
-  pyqtRemoveInputHook()
-  set_trace()
+    """Set a tracepoint in the Python debugger that works with Qt.
+
+    """
+    from PyQt4.QtCore import pyqtRemoveInputHook
+    from pdb import set_trace
+    pyqtRemoveInputHook()
+    set_trace()
 
 class TestData:
     """Test data (mechanical data, images, strain fields).
@@ -21,8 +23,10 @@ class TestData:
     time = None
 
     imagelist = None
+    image_t0 = None
 
     strainfields = None # currently list of vic2d csv files; may change
+    fieldtimes = None
 
     def __init__(self, jsonfile):
         """Read test data from a test file.
@@ -49,8 +53,8 @@ class TestData:
             imagenames = (os.path.basename(f) for f in imagelist)
             imagetimes = [mechana.images.image_time(nm)
                           for nm in imagenames]
-            t0 = imagetimes[0]
-            self.imagetimes = np.array(imagetimes) - t0
+            self.image_t0 = imagetimes[0]
+            self.imagetimes = np.array(imagetimes) - self.image_t0
             # Image lookup table
             imageids = [mechana.images.image_id(f)
                         for f in imagelist]
@@ -60,8 +64,17 @@ class TestData:
         # Read strain fields
         vic2dfolder = testdesc['vic2d_folder']
         if vic2dfolder is not None:
+            if self.image_t0 is None:
+                raise Exception("Cannot match Vic-2D times "
+                                "to mechanical test data "
+                                "without an offset defined "
+                                "for the image time codes.")
             vic2dfiles = mechana.vic2d.listcsvs(vic2dfolder)
             self.strainfields = vic2dfiles
+            csvnames = (os.path.basename(f) for f in vic2dfiles)
+            fieldtimes = [mechana.images.image_time(nm)
+                          for nm in csvnames]
+            self.fieldtimes = np.array(fieldtimes) - self.image_t0
 
     def stress_at(self, t):
         """Return stress at time t.
@@ -74,6 +87,22 @@ class TestData:
 
         """
         return np.interp(t, self.time, self.stretch)
+
+    def strainfields_at(self, t):
+      """Return strain fields at time t.
+
+      """
+      idx = np.argmin(np.abs(self.fieldtimes - t))
+      fieldtime = self.fieldtimes[idx]
+      csvpath = self.strainfields[idx]
+      df = mechana.vic2d.readv2dcsv(csvpath)
+      exx = mechana.vic2d.strainimg(df, 'exx')
+      eyy = mechana.vic2d.strainimg(df, 'eyy')
+      exy = mechana.vic2d.strainimg(df, 'exy')
+      fields = {'exx': exx,
+              'eyy': eyy,
+              'exy': exy}
+      return fields, fieldtime
 
     def image_at(self, t):
         """Return image at time t.

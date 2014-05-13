@@ -65,12 +65,20 @@ class DataView(QtGui.QWidget):
                                      unit='Pa')
         self.stress_vs_stretch.setLabel('bottom', text='Stretch Ratio')
         # Create image displays
-        self.camera_viewbox = pg.ViewBox()
-        self.camera_viewbox.setAspectLocked(True)
-        self.camera_viewbox.invertY()
-        self.camera_imitem = pg.ImageItem()
-        self.camera_viewbox.addItem(self.camera_imitem)
+        def create_imview():
+            vb = pg.ViewBox()
+            vb.setAspectLocked(True)
+            vb.invertY()
+            imitem = pg.ImageItem()
+            vb.addItem(imitem)
+            return vb, imitem
+        # Camera view
+        self.camera_viewbox, self.camera_imitem = create_imview()
         self.cameraview.setCentralItem(self.camera_viewbox)
+        # exx
+        self.exx_viewbox, self.exx_imitem = create_imview()
+        self.exxview.setCentralItem(self.exx_viewbox)
+        
         # Connect signals to slots for marker  
         self.stress_vs_stretch.marker.sigDragged.connect(self.on_stress_stretch_moved)
         self.stress_vs_time.marker.sigDragged.connect(self.on_stress_time_moved)
@@ -140,6 +148,12 @@ class DataView(QtGui.QWidget):
         """
         image, imtime = self.data.image_at(self.t)
         self.camera_imitem.updateImage(image)
+        fields, fieldtime = self.data.strainfields_at(self.t)
+        img = fields['exx']
+        img = np.nan_to_num(img)
+        img = img + np.min(img)
+        img = img * 255.0 / np.max(img)
+        self.exx_imitem.updateImage(img)
 
     def old_init():
         self.ssitem = pg.PlotCurveItem()
