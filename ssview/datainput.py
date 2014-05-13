@@ -70,7 +70,21 @@ class TestData:
                                 "without an offset defined "
                                 "for the image time codes.")
             vic2dfiles = mechana.vic2d.listcsvs(vic2dfolder)
-            self.strainfields = vic2dfiles
+            dfs = (mechana.vic2d.readv2dcsv(fp)
+                   for fp in vic2dfiles)
+
+            def get_fields(df):
+                exx = mechana.vic2d.strainimg(df, 'exx')
+                eyy = mechana.vic2d.strainimg(df, 'eyy')
+                exy = mechana.vic2d.strainimg(df, 'exy')
+                fields = {'exx': exx,
+                          'eyy': eyy,
+                          'exy': exy}
+                return fields
+
+            fields = [get_fields(df) for df in dfs]
+            self.strainfields = fields
+
             csvnames = (os.path.basename(f) for f in vic2dfiles)
             fieldtimes = [mechana.images.image_time(nm)
                           for nm in csvnames]
@@ -94,14 +108,7 @@ class TestData:
       """
       idx = np.argmin(np.abs(self.fieldtimes - t))
       fieldtime = self.fieldtimes[idx]
-      csvpath = self.strainfields[idx]
-      df = mechana.vic2d.readv2dcsv(csvpath)
-      exx = mechana.vic2d.strainimg(df, 'exx')
-      eyy = mechana.vic2d.strainimg(df, 'eyy')
-      exy = mechana.vic2d.strainimg(df, 'exy')
-      fields = {'exx': exx,
-              'eyy': eyy,
-              'exy': exy}
+      fields = self.strainfields[idx]
       return fields, fieldtime
 
     def image_at(self, t):
