@@ -2,7 +2,6 @@ from PyQt4 import QtGui, QtCore, uic
 from PyQt4.QtCore import pyqtSlot, pyqtSignal
 import pyqtgraph as pg
 import numpy as np
-import testdataIO
 import os
 from PIL import Image
 import csv
