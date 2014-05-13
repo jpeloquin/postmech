@@ -2,7 +2,7 @@ from PyQt4 import QtGui, QtCore, uic
 from PyQt4.QtCore import pyqtSlot, pyqtSignal
 import pyqtgraph as pg
 import numpy as np
-import os
+import os, sys
 from PIL import Image
 import csv
 from operator import itemgetter
@@ -75,11 +75,10 @@ class MainWindow(QtGui.QMainWindow):
         return sorted(zip(imtime, images))
 
 def main():
-    import sys
-    app = QtGui.QApplication(sys.argv)
     win = MainWindow()
     win.show()
     app.exec_()
 
 if __name__ == '__main__':
+    app = QtGui.QApplication(sys.argv)
     main()
