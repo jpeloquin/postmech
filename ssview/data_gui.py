@@ -87,19 +87,12 @@ class DataView(QtGui.QWidget):
     def load_data(self, fpath):
         self.data = TestData(fpath)
         # Populate line plots with data
-        pen = pg.mkPen(color="FFF", width=2)
         self.stretch_vs_time.plot(x=self.data.time,
-                                  y=self.data.stretch,
-                                  antialias=True,
-                                  pen=pen)
+                                   y=self.data.stretch)
         self.stress_vs_time.plot(x=self.data.time,
-                                 y=self.data.stress,
-                                 antialias=True,
-                                 pen=pen)
+                                   y=self.data.stress)
         self.stress_vs_stretch.plot(x=self.data.stretch,
-                                    y=self.data.stress,
-                                    antialias=True,
-                                    pen=pen)
+                                   y=self.data.stress)
         self.stretch_vs_time.marker.setPos(self.data.time[0])
         self.stress_vs_time.marker.setPos(self.data.time[0])
         self.stress_vs_stretch.marker.setPos(self.data.stretch[0])
