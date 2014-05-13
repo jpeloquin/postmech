@@ -61,8 +61,7 @@ def image_strain(imdir, mechcsv):
     # Interpolate stretch at image times
     y_im = np.interp(imtimes, t, y)
 
-    keys = [name2key(s) for s in imnames]
-    return zip(keys, y_im)
+    return zip(imnames, y_im)
 
 def image_scale(fpath):
     """Reads `image_scale.csv` and calculates mm/px"""

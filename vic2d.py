@@ -67,6 +67,8 @@ def listcsvs(directory):
 
 def readv2dcsv(f):
     df = pd.read_csv(f, skipinitialspace=True).dropna(how='all')
+    df['x'] = df['x'].astype(np.int)
+    df['y'] = df['y'].astype(np.int)
     return df
 
 class Vic2DDataset:
@@ -89,7 +91,7 @@ class Vic2DDataset:
             self.load_h5(h5path)
             # Make sure the h5 file is up to date
             uptodate = True
-            csvfiles = [os.path.join(vicdir, f) for f in listcsvs(vicdir)]
+            csvfiles = [f for f in listcsvs(vicdir)]
             csvhashes = [hashfile(f) for f in csvfiles]
             keys = [mechana.images.image_id(f) for f in csvfiles]
             h5hashdict = dict(zip(self.keys, self.hashes))
@@ -149,7 +151,7 @@ def hdf5ify(fdir, h5path=None):
     if h5path is None:
         h5path = os.path.join(fdir, 'data.h5')
     # Create list of vic2d csv files in the directory
-    csvfiles = [os.path.join(fdir, f) for f in listcsvs(fdir)]
+    csvfiles = [f for f in listcsvs(fdir)]
     key = [image_id(f) for f in csvfiles]
     fhashes = [hashfile(f) for f in csvfiles]
     hashdict = dict(zip(key, fhashes))
@@ -230,11 +232,11 @@ def strainimg(df, field):
     #    'is blank.'.format(row[0]))
     return strainfield
 
-def plot_strains(csvpath, figpath):
+def plot_strains(csvpath):
     """Plot strain from a Vic-2D .csv file.
 
     """
-    df = pd.read_csv(csvpath, skipinitialspace=True)
+    df = mechana.vic2d.readv2dcsv(csvpath)
 
     # Find extent of region that has values
     xmin = min(df['x'])
@@ -260,7 +262,7 @@ def plot_strains(csvpath, figpath):
     ax2 = fig.add_subplot(132, aspect='equal')
     ax3 = fig.add_subplot(133, aspect='equal')
     axes = [ax1, ax2, ax3]
-    matplotlib.rcParams.update({'font.size': 7})
+    matplotlib.rcParams.update({'font.size': 10})
 
     ## Add the three strain plots
     fields = ['exx', 'eyy', 'exy']
@@ -270,8 +272,20 @@ def plot_strains(csvpath, figpath):
         im = strainimg(df, field)
         ax = axes[i]
         cmin, cmax = np.percentile(df[field].values, [5, 95])
+        extremum = max(abs(cmin), abs(cmax))
+        leftextend = np.nanmin(im) < -extremum
+        rightextend = np.nanmax(im) > extremum
+        if leftextend and not rightextend:
+            extend = 'min'
+        elif rightextend and not leftextend:
+            extend = 'max'
+        elif leftextend and rightextend:
+            extend = 'both'
+        else:
+            extend = 'neither'
+
         implot = ax.imshow(im, cmap="lab_diverging",
-                           vmin=cmin, vmax=cmax)
+                           vmin=-extremum, vmax=extremum)
 
         ## Format axis
         ax.axis('off')
@@ -279,11 +293,12 @@ def plot_strains(csvpath, figpath):
         ax.invert_yaxis()
 
         ## Add colorbar
+        ticker=matplotlib.ticker.MaxNLocator(nbins=4)
         cbar = fig.colorbar(implot,
                             orientation='horizontal',
-                            ticks=matplotlib.ticker.MaxNLocator(nbins=6),
-                            ax=ax)
-        cbar.set_label(ctitles[i], size=10)
+                            extend=extend,
+                            ticks=ticker, ax=ax)
+        cbar.set_label(ctitles[i], size=14)
 
         ## Set colorbar limits
         clim = max(abs(cmin), abs(cmax))
