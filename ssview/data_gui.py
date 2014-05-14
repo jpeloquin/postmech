@@ -70,6 +70,10 @@ class DataView(QtGui.QWidget):
             imitem = pg.ImageItem()
             vb.addItem(imitem)
             return vb, imitem
+        def link_views(view1, view2):
+            """Sets view1 to follow view2."""
+            view1.setXLink(view2)
+            view1.setYLink(view2)
         # Camera view
         self.camera_viewbox, self.camera_imitem = create_imview()
         self.cameraview.setCentralItem(self.camera_viewbox)
@@ -82,6 +86,9 @@ class DataView(QtGui.QWidget):
         # exy
         self.exy_viewbox, self.exy_imitem = create_imview()
         self.exyview.setCentralItem(self.exy_viewbox)
+        # link axes
+        link_views(self.eyy_viewbox, self.exx_viewbox)
+        link_views(self.exy_viewbox, self.exx_viewbox)
         # Connect signals to slots for marker  
         self.stress_vs_stretch.marker.sigDragged.connect(self.on_stress_stretch_moved)
         self.stress_vs_time.marker.sigDragged.connect(self.on_stress_time_moved)
