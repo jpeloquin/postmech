@@ -4,6 +4,7 @@ import pyqtgraph as pg
 import numpy as np
 import os
 
+from datainput import cmap_div, cmap_div_lut
 from datainput import TestData
 
 def debug_trace():
@@ -89,6 +90,10 @@ class DataView(QtGui.QWidget):
         # link axes
         link_views(self.eyy_viewbox, self.exx_viewbox)
         link_views(self.exy_viewbox, self.exx_viewbox)
+        # Add colorbar
+        self.color_widget = pg.HistogramLUTWidget()
+        self.color_widget.gradient.setColorMap(cmap_div)
+        self.field_layout.addWidget(self.color_widget)
         # Connect signals to slots for marker  
         self.stress_vs_stretch.marker.sigDragged.connect(self.on_stress_stretch_moved)
         self.stress_vs_time.marker.sigDragged.connect(self.on_stress_time_moved)
