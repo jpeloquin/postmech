@@ -56,13 +56,11 @@ class DataView(QtGui.QWidget):
         # Format plots
         self.stretch_vs_time.setLabel('left', text='Stretch Ratio')
         self.stretch_vs_time.setLabel('bottom', text='Time', 
-                                     units='s')
-        self.stress_vs_time.setLabel('left', text='Stress',
-                                     unit='Pa')
-        self.stress_vs_time.setLabel('bottom', text='Time', 
-                                     units='s')
-        self.stress_vs_stretch.setLabel('left', text='Stress',
-                                     unit='Pa')
+                                      units='s')
+        self.stress_vs_time.setLabel('left', text='Stress', units='Pa')
+        self.stress_vs_time.setLabel('bottom', text='Time', units='s')
+        self.stress_vs_stretch.setLabel('left',text='Stress',
+                                        units='Pa')
         self.stress_vs_stretch.setLabel('bottom', text='Stretch Ratio')
         # Create image displays
         def create_imview():
