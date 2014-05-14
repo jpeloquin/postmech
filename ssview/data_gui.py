@@ -6,6 +6,20 @@ import os
 
 from datainput import TestData
 
+pos = np.arange(0.0, 1.0, 0.1)
+color = np.array([[0.0941, 0.3098, 0.6353, 1.0],
+                  [0.2745, 0.3882, 0.6824, 1.0],
+                  [0.4275, 0.6000, 0.8078, 1.0],
+                  [0.6275, 0.7451, 0.8824, 1.0],
+                  [0.8118, 0.8863, 0.9412, 1.0],
+                  [0.9451, 0.9569, 0.9608, 1.0],
+                  [0.9569, 0.8549, 0.7843, 1.0],
+                  [0.9725, 0.7216, 0.5451, 1.0],
+                  [0.8824, 0.5725, 0.2549, 1.0],
+                  [0.7333, 0.4706, 0.2118, 1.0],
+                  [0.5647, 0.3922, 0.1725, 1.0]])
+cmap_div = pg.ColorMap(pos, color)
+
 def debug_trace():
     '''Set a tracepoint in the Python debugger that works with Qt'''
     from PyQt4.QtCore import pyqtRemoveInputHook
@@ -78,7 +92,12 @@ class DataView(QtGui.QWidget):
         # exx
         self.exx_viewbox, self.exx_imitem = create_imview()
         self.exxview.setCentralItem(self.exx_viewbox)
-        
+        # eyy
+        self.eyy_viewbox, self.eyy_imitem = create_imview()
+        self.eyyview.setCentralItem(self.eyy_viewbox)
+        # exy
+        self.exy_viewbox, self.exy_imitem = create_imview()
+        self.exyview.setCentralItem(self.exy_viewbox)
         # Connect signals to slots for marker  
         self.stress_vs_stretch.marker.sigDragged.connect(self.on_stress_stretch_moved)
         self.stress_vs_time.marker.sigDragged.connect(self.on_stress_time_moved)
@@ -149,11 +168,19 @@ class DataView(QtGui.QWidget):
         image, imtime = self.data.image_at(self.t)
         self.camera_imitem.updateImage(image)
         fields, fieldtime = self.data.strainfields_at(self.t)
-        img = fields['exx']
-        img = np.nan_to_num(img)
-        img = img + np.min(img)
-        img = img * 255.0 / np.max(img)
-        self.exx_imitem.updateImage(img)
+        def render_image(img):
+            isnan = np.isnan(img)
+            img = np.nan_to_num(img)
+            absmax = np.abs(np.max(img))
+            if absmax == 0.0:
+                absmax = 1.0
+            img, b = pg.makeARGB(img, levels=(-absmax, absmax),
+                                 lut=cmap_div.getLookupTable())
+            img[isnan] = 0
+            return img
+        self.exx_imitem.setImage(render_image(fields['exx']))
+        self.eyy_imitem.setImage(render_image(fields['eyy']))
+        self.exy_imitem.setImage(render_image(fields['exy']))
 
     def old_init():
         self.ssitem = pg.PlotCurveItem()
