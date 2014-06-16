@@ -54,7 +54,7 @@ class DataView(QtGui.QWidget):
         super(DataView, self).__init__(parent)
         codedir = os.path.dirname(os.path.abspath(__file__))
         uic.loadUi(os.path.join(codedir, 'DataView.ui'), self)
-        # Format plots
+        # Format line plots
         self.stretch_vs_time.setLabel('left', text='Stretch Ratio')
         self.stretch_vs_time.setLabel('bottom', text='Time', 
                                       units='s')
@@ -63,6 +63,9 @@ class DataView(QtGui.QWidget):
         self.stress_vs_stretch.setLabel('left',text='Stress',
                                         units='Pa')
         self.stress_vs_stretch.setLabel('bottom', text='Stretch Ratio')
+        # Link time axes
+        self.stretch_vs_time.setXLink(self.stress_vs_time)
+
         # Create image displays
         def create_imview():
             vb = pg.ViewBox()
@@ -71,7 +74,7 @@ class DataView(QtGui.QWidget):
             imitem = pg.ImageItem()
             vb.addItem(imitem)
             return vb, imitem
-        def link_views(view1, view2):
+        def link_views_xy(view1, view2):
             """Sets view1 to follow view2."""
             view1.setXLink(view2)
             view1.setYLink(view2)
@@ -87,10 +90,10 @@ class DataView(QtGui.QWidget):
         # exy
         self.exy_viewbox, self.exy_imitem = create_imview()
         self.exyview.setCentralItem(self.exy_viewbox)
-        # link axes
-        link_views(self.eyy_viewbox, self.exx_viewbox)
-        link_views(self.exy_viewbox, self.exx_viewbox)
-        # Add colorbar
+        # link axes of strain field plots
+        link_views_xy(self.eyy_viewbox, self.exx_viewbox)
+        link_views_xy(self.exy_viewbox, self.exx_viewbox)
+        # Add colorbar to strain field plots
         self.color_widget = pg.HistogramLUTWidget()
         self.color_widget.gradient.setColorMap(cmap_div)
         self.field_layout.addWidget(self.color_widget)
