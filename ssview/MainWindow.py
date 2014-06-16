@@ -26,7 +26,7 @@ class MainWindow(QtGui.QMainWindow):
         codedir = os.path.dirname(os.path.abspath(__file__))
         uic.loadUi(os.path.join(codedir, 'MainWindow.ui'), self)
         # Initialize the python parts of the UI
-        self.data_view = DataView()
+        self.data_view = DataView(parent_window=self)
         self.actionOpen.triggered.connect(self.open_file)
         self.actionQuit.triggered.connect(QtGui.qApp.quit)
         self.setCentralWidget(self.data_view)

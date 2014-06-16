@@ -50,10 +50,12 @@ class DataView(QtGui.QWidget):
     signalDataChanged = pyqtSignal()
     signalMarkerMoved = pyqtSignal()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, parent_window=None):
         super(DataView, self).__init__(parent)
         codedir = os.path.dirname(os.path.abspath(__file__))
         uic.loadUi(os.path.join(codedir, 'DataView.ui'), self)
+        # Store references to other objects
+        self.parent_window = parent_window
         # Format line plots
         self.stretch_vs_time.setLabel('left', text='Stretch Ratio')
         self.stretch_vs_time.setLabel('bottom', text='Time', 
@@ -104,6 +106,11 @@ class DataView(QtGui.QWidget):
 
     def load_data(self, fpath):
         self.data = TestData(fpath)
+        # Change title bar of main window
+        if self.parent_window is not None:
+            s = os.path.relpath(fpath,
+                                start=os.path.join(fpath, '../..'))
+            self.parent_window.setWindowTitle(s)
         # Populate line plots with data
         self.stretch_vs_time.plot(x=self.data.time,
                                   y=self.data.stretch,
