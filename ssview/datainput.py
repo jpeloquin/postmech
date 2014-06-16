@@ -77,6 +77,7 @@ class TestData:
         imagelist = testdesc['images']
         if imagelist is not None:
             # Image list
+            # Make the paths relative to the json file
             imagelist = [os.path.join(datadir, fp)
                          for fp in testdesc['images']]
             self.imagelist = imagelist
@@ -95,6 +96,8 @@ class TestData:
         # Read strain fields
         vic2dfolder = testdesc['vic2d_folder']
         if vic2dfolder is not None:
+            # make vic2d folder relative to json file
+            vic2dfolder = os.path.join(datadir, vic2dfolder)
             if self.image_t0 is None:
                 raise Exception("Cannot match Vic-2D times "
                                 "to mechanical test data "
