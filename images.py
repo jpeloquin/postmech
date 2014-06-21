@@ -190,8 +190,8 @@ def make_vic2d_lists(imidx, mechcsv, interval=0.01, highres=None):
     selected_images = [imdict['zero_strain'],
                        imdict['ramp_start']]
     t0 = image_time(imdict['ramp_start'])
-    if imdict.get('rupture') is not None:
-        last_image = imdict['rupture']
+    if imdict.get('vic2d_final') is not None:
+        last_image = imdict['vic2d_final']
     else:
         last_image = imdict['end']
     t1 = image_time(last_image)
@@ -203,7 +203,7 @@ def make_vic2d_lists(imidx, mechcsv, interval=0.01, highres=None):
             inhighres = (y >= highres[0] and y <= highres[1])
         else:
             inhighres = False
-        if (t > t0 and t < t1 and (y - yt > interval or inhighres)):
+        if (t > t0 and t <= t1 and (y - yt > interval or inhighres)):
             yt = y
             selected_images.append(imnames[i])
     # Write image list
