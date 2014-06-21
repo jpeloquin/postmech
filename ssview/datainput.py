@@ -52,7 +52,8 @@ class TestData:
     stress = None
     time = None
 
-    imagelist = None
+    imagepaths = None
+    imagenames = None
     image_t0 = None
 
     strainfields = None # list of monochrome uint8 images
@@ -80,11 +81,11 @@ class TestData:
             # Make the paths relative to the json file
             imagelist = [os.path.join(datadir, fp)
                          for fp in testdesc['images']]
-            self.imagelist = imagelist
+            self.imagepaths = imagelist
             # Image times
-            imagenames = (os.path.basename(f) for f in imagelist)
+            self.imagenames = [os.path.basename(f) for f in imagelist]
             imagetimes = [mechana.images.image_time(nm)
-                          for nm in imagenames]
+                          for nm in self.imagenames]
             self.image_t0 = imagetimes[0]
             self.imagetimes = np.array(imagetimes) - self.image_t0
             # Image lookup table
@@ -92,7 +93,7 @@ class TestData:
                         for f in imagelist]
             self.imagedict = dict(zip(imageids, imagelist))
         else:
-            self.imagelist = None
+            self.imagepaths = None
         # Read strain fields
         vic2dfolder = testdesc['vic2d_folder']
         if vic2dfolder is not None:
@@ -168,13 +169,21 @@ class TestData:
       return fields, fields_argb, fieldtime
 
     def image_at(self, t):
-        """Return image at time t.
+        """Return frame (and metadata) at time t.
 
         """
         idx = np.argmin(np.abs(self.imagetimes - t))
         imtime = self.imagetimes[idx]
-        image = mpimg.imread(self.imagelist[idx])
-        return image, imtime
+        impath = self.imagepaths[idx]
+        imname = self.imagenames[idx]
+        image = mpimg.imread(impath)
+
+        mdata = {}
+        mdata['time'] = imtime # this is based on the tensile tester
+                               # clock
+        mdata['name'] = imname
+
+        return image, mdata
 
 
 def imtime(imlist):

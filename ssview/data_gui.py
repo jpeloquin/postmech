@@ -33,7 +33,7 @@ class DataView(QtGui.QWidget):
     data = None # currently loaded test data
 
     # Gui objects defined here
-    imitem = None # pyqtgraph.ImageItem for video feed
+    # imitem # pyqtgraph.ImageItem for video feed
 
     # Plots (names defined in Qt Creator)
     # stretch_vs_time
@@ -82,7 +82,10 @@ class DataView(QtGui.QWidget):
             view1.setYLink(view2)
         # Camera view
         self.camera_viewbox, self.camera_imitem = create_imview()
-        self.cameraview.setCentralItem(self.camera_viewbox)
+        self.camera_plotitem = pg.PlotItem(viewBox=self.camera_viewbox)
+        self.camera_plotitem.showAxis('left', show=False)
+        self.camera_plotitem.showAxis('bottom', show=False)
+        self.cameraview.setCentralItem(self.camera_plotitem)
         # exx
         self.exx_viewbox, self.exx_imitem = create_imview()
         self.exxview.setCentralItem(self.exx_viewbox)
@@ -174,12 +177,17 @@ class DataView(QtGui.QWidget):
         """Display images corresponding to time t
 
         """
-        image, imtime = self.data.image_at(self.t)
-        self.camera_imitem.updateImage(image)
-        fields, fields_rgba, fieldtime = self.data.strainfields_at(self.t)
-        self.exx_imitem.setImage(fields_rgba['exx'])
-        self.eyy_imitem.setImage(fields_rgba['eyy'])
-        self.exy_imitem.setImage(fields_rgba['exy'])
+        # Camera frames
+        if self.data.imagepaths is not None:
+            image, mdata = self.data.image_at(self.t)
+            self.camera_imitem.updateImage(image)
+            self.camera_plotitem.setTitle(mdata['name'])
+        # Strain fields
+        if self.data.strainfields is not None:
+            fields, fields_rgba, fieldtime = self.data.strainfields_at(self.t)
+            self.exx_imitem.setImage(fields_rgba['exx'])
+            self.eyy_imitem.setImage(fields_rgba['eyy'])
+            self.exy_imitem.setImage(fields_rgba['exy'])
 
     def old_init():
         self.ssitem = pg.PlotCurveItem()
