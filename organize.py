@@ -6,7 +6,7 @@ import os, json
 
 def write_test_file(fout='test_data.json',
                     ssfile='stress_strain.csv',
-                    vic2d_folder=None, 
+                    vic2d_folder=None,
                     images=None):
     """Write a JSON file that gathers all the data for a test.
 
@@ -18,9 +18,9 @@ def write_test_file(fout='test_data.json',
 
     Paths are defined relative to the directory in which the JSON file
     is stored.
-    
+
     Default assumptions:
-    
+
     - The first image in the list was taken approximately at the same
       time the stress & strain test data begins.
 
