@@ -174,7 +174,11 @@ def move_extra(fpath):
             os.rename(os.path.join(imdir, fname),
                       os.path.join(undir, fname))
 
-def make_vic2d_lists(imidx, mechcsv, interval=0.01, highres=None):
+def make_vic2d_lists(fp, mechcsv, interval=0.01, highres=None,
+                     fout='vic2d_list.csv',
+                     zero_strain='zero_strain',
+                     start='vic2d_start',
+                     end='vic2d_end'):
     """List images for vic2d analysis.
 
     Inputs
@@ -183,29 +187,32 @@ def make_vic2d_lists(imidx, mechcsv, interval=0.01, highres=None):
         If an image has a stretch ratio >= highres[0] and <=
         highres[1], it will be included in the list even if it would
         be skipped according the interval setting.
+    start : string
+        The key in image_index.csv naming the first frame to be
+        included in the list.
+    end : string
+        The key in image_index.csv naming the last frame to be
+        included in the list.
 
     """
-    # Ensure absolute paths
-    imidx = os.path.abspath(imidx)
-    mechcsv = os.path.abspath(mechcsv)
+    # Calculate paths
+    fp_imindex = os.path.abspath(fp)
+    imdir = os.path.dirname(fp_imindex)
+    fp_ss = os.path.abspath(mechcsv)
 
-    imdir = os.path.dirname(imidx)
-    imdict = read_image_index(imidx)
+    imindex = read_image_index(fp_imindex)
+    imlist = mechana.images.list_images(imdir)
     imnames, stretch = zip(*image_strain(imdir, mechcsv))
-    imlist = get_image_list(imidx)
 
-    reftime = image_time(imdict['ref_time'])
+    selected_images = [imindex[zero_strain]]
 
-    # Choose images for ramp
-    selected_images = [imdict['zero_strain'],
-                       imdict['ramp_start']]
-    t0 = image_time(imdict['ramp_start'])
-    if imdict.get('vic2d_final') is not None:
-        last_image = imdict['vic2d_final']
-    else:
-        last_image = imdict['end']
-    t1 = image_time(last_image)
-    y1 = stretch[imnames.index(last_image)]
+    t_start = image_time(imindex[start])
+    t_end = image_time(imindex[end])
+    imname_start = imindex[start]
+    imname_end = imindex[end]
+
+    y_start = stretch[imnames.index(imname_start)]
+    y_end = stretch[imnames.index(imname_end)]
     yt = 0
     for i, y in enumerate(stretch):
         t = image_time(imnames[i])
@@ -213,13 +220,15 @@ def make_vic2d_lists(imidx, mechcsv, interval=0.01, highres=None):
             inhighres = (y >= highres[0] and y <= highres[1])
         else:
             inhighres = False
-        if (t > t0 and t <= t1 and (y - yt > interval or inhighres)):
+        if (t > t_start and t <= t_end 
+            and (y - yt > interval or inhighres)):
             yt = y
             selected_images.append(imnames[i])
+
     # Write image list
-    with open(os.path.join(imdir, 'images_ramp_subsample.txt'), 'w') as f:
-        for fname in selected_images:
-            f.write(fname + '\n')
+    with open(fout, 'w') as f:
+        for nm in selected_images:
+            f.write(nm + '\n')
 
 if __name__ == "__main__":
     """Hides images that are unnecessary for vic2d."""
