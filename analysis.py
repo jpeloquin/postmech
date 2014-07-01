@@ -14,7 +14,7 @@ def label_unit(text):
     """
     pass
 
-def key_stress_pts(fpath, imdir=None, fout=None):
+def key_stress_pts(fpath, imdir=None):
     """Find image frames corresponding to key stress values.
 
     Points calculated:
@@ -24,8 +24,6 @@ def key_stress_pts(fpath, imdir=None, fout=None):
     """
     # Get paths
     dirname = os.path.dirname(os.path.abspath(fpath))
-    if fout is None:
-        fout = os.path.join(dirname, "key_stress_pts.csv")
     # Get mechanical data
     df = pd.read_csv(fpath)
     # Get image data
@@ -149,5 +147,5 @@ def key_stress_pts(fpath, imdir=None, fout=None):
     ax.set_xlabel("Stretch ratio")
     ax.set_ylabel("Stress (MPa)")
     fig.tight_layout()
-    extless, ext = os.path.splitext(fout)
-    fig.savefig(extless + '_plot.svg')
+    fout = os.path.join(dirname, "key_stress_pts_plot.svg")
+    fig.savefig(fout)
