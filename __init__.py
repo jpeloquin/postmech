@@ -1,4 +1,5 @@
 import images
+import analysis
 import vic2d
 import read
 import instron
