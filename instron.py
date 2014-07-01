@@ -79,24 +79,23 @@ if __name__ == "__main__":
                         'write the output file to the same directory as '
                         'the input file.')
     args = parser.parse_args()
-    # Argument defaults
-    head, tail = os.path.split(args.input)
-    head, tail = os.path.split(head)
+
+    # File paths
+    datadir = os.path.dirname(os.path.dirname(args.input))
     if args.imdir:
         imdir = args.imdir
     else:
-        imdir = os.path.join(head, "images")
+        imdir = os.path.join(datadir, "images")
     # Calculations
     scale = mechana.images.image_scale(os.path.join(imdir,
                                                     "image_scale.csv"))
     # read reference length
-    fpath = os.path.join(datadir, "reference_length.csv")
+    fpath = os.path.join(imdir, "ref_length.csv")
     with open(fpath, 'rb') as f:
         reader = csv.reader(f)
         l0 = float(reader.next()[0])
     t, d, p = read_instron_csv(args.input)
     y = stretch_ratio(d, l0)
-    datadir = os.path.dirname(os.path.dirname(args.input))
     fpath = os.path.join(datadir, "area.csv")
     with open(fpath, 'r') as f:
         reader = csv.reader(f)
