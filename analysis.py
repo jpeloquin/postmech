@@ -119,7 +119,7 @@ def key_stress_pts(fpath, imdir=None):
 
     # Plot the key points
     import matplotlib.pyplot as plt
-    fig = plt.figure(figsize=(4,3), dpi=600)
+    fig = plt.figure(figsize=(4,3))
     ax = fig.add_subplot(111)
     ydiv = 1e6
     ax.plot(df['Stretch Ratio'], df['Stress (Pa)'] / ydiv,
