@@ -29,7 +29,8 @@ def key_stress_pts(fpath, imdir=None):
     # Get image data
     if imdir is None:
         imdir = os.path.join(dirname, "images")
-    imlist = mechana.images.list_images(imdir)
+    imlist = [os.path.basename(s)
+              for s in mechana.images.list_images(imdir)]
     imindex = mechana.images.read_image_index(
         os.path.join(imdir, "image_index.csv"))
     imtime0 = mechana.images.image_time(imindex['ref_time'])
@@ -40,73 +41,45 @@ def key_stress_pts(fpath, imdir=None):
     imtimes = [mechana.images.image_time(nm) - d 
                   for nm in imlist]
 
-    # Helper function
-    def closest_idx(target, values, count_from='right'):
-        """Find index of closest value by simple counting.
-
-        The closest value is found by checking each value in sequence
-        until the target threshold is crossed for the first time.
-        (The function determines whether the sequence is increasing
-        nor decreasing based on whether the first value is greater
-        than or less than the target value.)
-
-        Values can be checked from left to right or right to left.
-        Any value that would be subsequently checked is ignored.
-
-        """
-        # Setup
-        if count_from == 'right':
-            idx = len(values) - 1
-            increment = -1
-        elif count_from == 'left':
-            idx = 0
-            increment = 1
-        else:
-            raise Exception("count_from must be 'left' or 'right'")
-        # Run the loop
-        v = values[idx]
-        # Figure out if we're counting up or down
-        if values[idx] < target:
-            # values should increase
-            while v < target:
-                idx = idx + increment
-                v = values[idx]
-        else:
-            # values should decrease
-            while v > target:
-                idx = idx + increment
-                v = values[idx]
-        idx = idx - increment
-        # Check if result outside of bounds
-        if idx < 0:
-            raise ValueError("The sequence does not include a point to the left of the target value.")
-        if idx > (len(values) - 1):
-            raise ValueError("The sequence does not include a point to the right of the target value.")
-        return idx
-
     # Allocate output
     out = {}
 
     # Peak stress
     peak_stress = df['Stress (Pa)'].max()
     idx_peak = df.idxmax()['Stress (Pa)']
-    idx = closest_idx(df['Time (s)'][idx_peak],
-                      imtimes, count_from='right')
-    imname = os.path.basename(imlist[idx])
-    out['peak stress'] = imname
+    out['peak stress'] = next(nm for nm, t in zip(imlist, imtimes)
+                              if t > df['Time (s)'][idx_peak])
 
     # Residual stress
-    resfrac = [0.01, 0.02, 0.05]
+    resfrac = [0.01, 0.02, 0.05][::-1]
+    # The list is reversed because, when the residual strength points
+    # are plotted, the smaller residual strength points may not exist
+    # on the curve.  Making them come last means their absence won't
+    # affect the assignment of colors for the other points.
     idx_res = []
     for f in resfrac:
-        res_stress = f * peak_stress
-        idx_res.append(closest_idx(res_stress, df['Stress (Pa)'],
-                                   count_from='right'))
-        idx = closest_idx(df['Time (s)'][idx_res[-1]],
-                          imtimes, count_from='right')
-        imname = os.path.basename(imlist[idx])
         key = '{}% residual strength'.format(int(round(f * 100)))
-        out[key] = imname
+        res_stress = f * peak_stress
+
+        # find index of first stress value, from right, that exceeds
+        # the threshold
+        if df['Stress (Pa)'].iget(-1) > res_stress:
+            # Last stress value already exceeds threshold
+            idx = None
+        else:
+            idx = next(i for i in df.index[::-1]
+                       if df['Stress (Pa)'][i] > res_stress)
+        idx_res.append(idx)
+
+        # find index of corresponding image (nearest following time)
+        if idx_res[-1] is not None:
+            tc = df['Time (s)'][idx_res[-1]]
+            imname = next((nm for t, nm in zip(imtimes, imlist)
+                           if t > tc),
+                          None)
+            out[key] = imname
+        else:
+            out[key] = None
 
     # Write frames to image index
     fpath = os.path.join(imdir, "image_index.csv")
@@ -115,7 +88,10 @@ def key_stress_pts(fpath, imdir=None):
     with open(fpath, 'w') as f:
         csvwriter = csv.writer(f, quoting=csv.QUOTE_NONNUMERIC)
         for k in imindex:
-            csvwriter.writerow([k, imindex[k]])
+            v = imindex[k]
+            if v is None:
+                v = "NA"
+            csvwriter.writerow([k, v])
 
     # Plot the key points
     import matplotlib.pyplot as plt
@@ -133,13 +109,14 @@ def key_stress_pts(fpath, imdir=None):
     legend_labels = ['Peak stress']
     lns_res = []
     for i, f in enumerate(resfrac):
-        ln_res, = ax.plot(df.loc[idx_res[i]]['Stretch Ratio'],
-                          df.loc[idx_res[i]]['Stress (Pa)'] / ydiv,
-                          marker='o', markersize=6,
-                          linestyle='None')
-        lns_res.append(ln_res)
-        legend_labels.append("{}% strength".format(
-            int(round(f * 100))))
+        if idx_res[i] is not None:
+            ln_res, = ax.plot(df.loc[idx_res[i]]['Stretch Ratio'],
+                              df.loc[idx_res[i]]['Stress (Pa)'] / ydiv,
+                              marker='o', markersize=6,
+                              linestyle='None')
+            lns_res.append(ln_res)
+            legend_labels.append("{}% strength".format(
+                int(round(f * 100))))
     ax.legend([ln_peak] + lns_res, legend_labels,
               loc='upper right', prop={'size': 10},
               numpoints=1)
