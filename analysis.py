@@ -85,7 +85,7 @@ def key_stress_pts(fpath, imdir=None):
     fpath = os.path.join(imdir, "image_index.csv")
     for k in out:
         imindex[k] = out[k]
-    with open(fpath, 'w') as f:
+    with open(fpath, 'wb') as f:
         csvwriter = csv.writer(f, quoting=csv.QUOTE_NONNUMERIC)
         for k in imindex:
             v = imindex[k]
