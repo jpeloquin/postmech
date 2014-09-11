@@ -12,10 +12,12 @@ $ choose_images IMAGE_INDEX.CSV
 """
 
 import os, re, sys, csv
-import re
+
 import numpy as np
+
 import mechana
 from mechana import instron
+from mechana.unit import ureg
 
 def image_id(fpath):
     """Convert image name into a unique id.
@@ -67,24 +69,37 @@ def image_scale(fpath):
     """Reads `image_scale.csv` and calculates mm/px"""
     with open(fpath, 'rb') as f:
         reader = csv.reader(f)
-        dpx = float(reader.next()[0])
-        dmm = float(reader.next()[0])
-    scale = dmm / dpx
-    return scale
+        for line in reader:
+            unit = line[-1]
+            if unit == "px":
+                unit = ureg(unit)
+                px_d = float(line[0]) * unit
+                px_sd = float(line[1]) * unit
+            else:
+                unit = ureg(unit)
+                d = float(line[0]) * unit
+                sd = float(line[1]) * unit
+    scale = d / px_d
+    scale_sd = abs(scale) * ((sd / d)**2.0 + (px_sd / px_d)**2.0)**0.5
+    return scale, scale_sd
 
-def reference_length(fpath, scale):
-    """Reads ref_length.csv"""
-    with open(fpath, 'rb') as f:
-        reader = csv.reader(f)
-        l0 = float(reader.next()[0]) * scale
-    return l0
+def from_px(fpath, scale):
+    """Reads ref_length.csv
+
+    scale := (value, sd)
+
+    """
+    d, sd = mechana.read.measurement_csv(fpath)
+    mm_d =  d * scale[0]
+    mm_sd = abs(mm_d) * ((sd / d)**2.0 + (scale[1] / scale[0])**2.0)**0.5
+    return mm_d, mm_sd
 
 def image_time(imname):
     """Parse image time from image filename.
 
     The image filenames are assumed to be in the convention followed
     by the Elliott lab LabView camera capture VI:
-    
+
     `cam#_index_timeinseconds.tiff`
 
     """
@@ -148,7 +163,7 @@ def get_image_list(fpath):
                        for k, v in image_index.iteritems()
                        if v != 'NA')
     for i, fname in enumerate(images):
-        if (i >= image_index['ref_time'] and 
+        if (i >= image_index['ref_time'] and
             i < image_index['ramp_start']):
             curr_phase = 'preconditioning'
         elif (i >= image_index['ramp_start'] and
@@ -220,7 +235,7 @@ def make_vic2d_lists(fp, mechcsv, interval=0.01, highres=None,
             inhighres = (y >= highres[0] and y <= highres[1])
         else:
             inhighres = False
-        if (t > t_start and t <= t_end 
+        if (t > t_start and t <= t_end
             and (y - yt > interval or inhighres)):
             yt = y
             selected_images.append(imnames[i])

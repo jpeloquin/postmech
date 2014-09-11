@@ -1,6 +1,27 @@
+import csv
+
 import pandas as pd
 import numpy as np
+from pint import UnitRegistry
+
 import mechana
+from mechana.unit import ureg
+
+def measurement_csv(fpath):
+    """Read a csv measurement file.
+
+    The file should have the format:
+
+    value,s.d.,"unit"
+
+    """
+    with open(fpath, 'rb') as f:
+        reader = csv.reader(f)
+        for line in reader:
+            unit = ureg(line[-1])
+            d = float(line[0]) * unit
+            sd = float(line[1]) * unit
+    return d, sd
 
 def bose_data(fpath):
     """Read a text data file exported by Wintest.
@@ -54,3 +75,43 @@ def bose_data(fpath):
         data["Disp"] = data["Disp"] / 1000
         data = data.rename(columns = {'Disp': 'Position (m)'})
     return data
+
+def instron_data(fpath):
+    """Read data from an Instron csv file.
+
+    The function expects to find time, extension, and load data.  It
+    assumes that time is the first column.
+
+    Outputs
+    -------
+    time, extension, load : numpy array
+
+    """
+    t = []
+    d = []
+    p = []
+    with open(fpath, 'rb') as f:
+        reader = csv.reader(f, delimiter=",", quotechar='"')
+        for i in range(6): # skip header
+            reader.next()
+        header = reader.next() # read column names
+        # Check that we arrived at the right row
+        assert header[0] == 'Time'
+        # Find Load and Extension columns
+        dind = header.index('Extension')
+        pind = header.index('Load')
+        units = reader.next() # read units
+        assert units[0] == "(s)"
+        assert units[1] == "(mm)"
+        assert units[2] == "(N)"
+        for row in reader:
+            t.append(float(row[0]))
+            d.append(float(row[dind]) / 1000) # mm -> m
+            p.append(float(row[pind]))
+    t = np.array(t)
+    d = np.array(d)
+    p = np.array(p)
+    df = pd.DataFrame.from_dict({'Time (s)': t,
+                                 'Position (m)': d,
+                                 'Load (N)': p})
+    return df

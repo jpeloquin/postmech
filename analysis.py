@@ -5,8 +5,12 @@ Calculating metrics & deriving meaning.
 
 """
 import os, json, csv
+
 import pandas as pd
+import matplotlib.pyplot as plt
+
 import mechana
+from mechana.unit import ureg
 
 def label_unit(text):
     """Split a label (unit) string into parts.
@@ -38,7 +42,7 @@ def key_stress_pts(fpath, imdir=None):
         reader = csv.reader(f)
         reftime = float(reader.next()[0])
     d = imtime0 - reftime
-    imtimes = [mechana.images.image_time(nm) - d 
+    imtimes = [mechana.images.image_time(nm) - d
                   for nm in imlist]
 
     # Allocate output
@@ -94,7 +98,6 @@ def key_stress_pts(fpath, imdir=None):
             csvwriter.writerow([k, v])
 
     # Plot the key points
-    import matplotlib.pyplot as plt
     fig = plt.figure(figsize=(4,3))
     ax = fig.add_subplot(111)
     ydiv = 1e6
@@ -126,3 +129,63 @@ def key_stress_pts(fpath, imdir=None):
     fig.tight_layout()
     fout = os.path.join(dirname, "key_stress_pts_plot.svg")
     fig.savefig(fout)
+
+def stress_strain(spcdir, mechpath, areapath, lengthpath,
+                  notchpath=None, widthpath=None,
+                  fmt='Bluehill', imdir=None):
+
+    if imdir is None:
+        imdir = os.path.join(spcdir, "images")
+
+    # Read tensile test data
+    if fmt == 'Wintest':
+        data = mechana.read.bose_data(mechpath)
+    elif fmt == 'Bluehill':
+        data = mechana.read.instron_data(mechpath)
+    else:
+        raise Exception("Specified format '"
+                        + fmt + "' is not supported.")
+
+    # Read area
+    area = mechana.read.measurement_csv(areapath)
+    area = area[0].to('m**2').magnitude
+
+    # Read reference length
+    ref_length = mechana.read.measurement_csv(lengthpath)
+    ref_length = ref_length[0].to('m').magnitude
+
+    # If notched, reduce effective area
+    if notchpath:
+        fpath = notchpath
+        with open(fpath, 'rb') as f:
+            reader = csv.reader(f)
+            a = float(reader.next()[0])
+        fpath = widthpath
+        with open(fpath, 'rb') as f:
+            reader = csv.reader(f)
+            w = float(reader.next()[0])
+        area = area * (1 - a / w)
+
+    # Calculate stretch and stress
+    # Stretch
+    length = ref_length + (data['Position (m)']
+                           - data['Position (m)'][0])
+    data['Stretch Ratio'] = length / ref_length
+    # Stress
+    data['Stress (Pa)'] = data['Load (N)'] / area
+
+    # Generate a plot
+    fig = plt.figure(figsize=(4,3))
+    ax = fig.add_subplot(111)
+    # converting to MPa
+    ax.plot(data["Stretch Ratio"],
+            data["Stress (Pa)"] / 1e6,
+            color='k')
+    ax.set_xlabel("Stretch")
+    ax.set_ylabel("Stress (MPa)")
+    fig.tight_layout()
+    fig.savefig(os.path.join(spcdir, "stress_strain.svg"))
+
+    # Write output
+    outpath = os.path.join(spcdir, "stress_strain.csv")
+    data.to_csv(outpath, index=False)
