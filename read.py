@@ -20,7 +20,10 @@ def measurement_csv(fpath):
         for line in reader:
             unit = ureg(line[-1])
             d = float(line[0]) * unit
-            sd = float(line[1]) * unit
+            if line[1]:
+                sd = float(line[1]) * unit
+            else:
+                sd = None
     return d, sd
 
 def bose_data(fpath):
