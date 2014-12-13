@@ -132,7 +132,8 @@ def key_stress_pts(fpath, imdir=None):
 
 def stress_strain(spcdir, mechpath, areapath, lengthpath,
                   notchpath=None, widthpath=None,
-                  fmt='Bluehill', imdir=None):
+                  fmt='Bluehill', imdir=None,
+                  fn_out="stress_strain"):
 
     if imdir is None:
         imdir = os.path.join(spcdir, "images")
@@ -184,8 +185,8 @@ def stress_strain(spcdir, mechpath, areapath, lengthpath,
     ax.set_xlabel("Stretch")
     ax.set_ylabel("Stress (MPa)")
     fig.tight_layout()
-    fig.savefig(os.path.join(spcdir, "stress_strain.svg"))
+    fig.savefig(os.path.join(spcdir, fn_out + ".svg"))
 
     # Write output
-    outpath = os.path.join(spcdir, "stress_strain.csv")
+    outpath = os.path.join(spcdir, fn_out + ".csv")
     data.to_csv(outpath, index=False)
