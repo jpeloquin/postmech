@@ -184,6 +184,16 @@ def stress_strain(spcdir, mechpath, areapath, lengthpath,
             color='k')
     ax.set_xlabel("Stretch")
     ax.set_ylabel("Stress (MPa)")
+    # set x axis limits
+    x0 = data['Stretch Ratio'].min()
+    thresh = 0.01 * data['Stress (Pa)'].max()
+    if data['Stress (Pa)'].iget(-1) > thresh:
+        x1 = data['Stretch Ratio'].max()
+    else:
+        idx = next(i for i in data.index[::-1]
+                   if data['Stress (Pa)'][i] > thresh)
+        x1 = data['Stretch Ratio'][idx]
+    ax.set_xlim(x0, x1)
     fig.tight_layout()
     fig.savefig(os.path.join(spcdir, fn_out + ".svg"))
 
