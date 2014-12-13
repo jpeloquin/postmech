@@ -48,17 +48,16 @@ def image_strain(imdir, mechcsv):
     scale = image_scale(os.path.join(imdir, 'image_scale.csv'))
 
     # Calculate reference length
-    l0 = reference_length(os.path.join(imdir, 'ref_length.csv'), scale)
+    l0 = from_px(os.path.join(imdir, 'ref_length.csv'), scale)
 
     # Load mechanical test data
-    t, d, p = mechana.instron.read_instron_csv(mechcsv)
-    with open(os.path.join(imdir, 'ref_time.csv')) as f:
-        reader = csv.reader(f)
-        mech_reftime = float(reader.next()[0])
-    t = t - mech_reftime
+    df = mechana.read.instron_data(mechcsv)
+    mech_reftime = mechana.read.measurement_csv("ref_time.csv")
+    t = df['Time (s)'] - mech_reftime[0].to('s').magnitude
 
     # Calculate stretch
-    y = (d + l0) / l0
+    l0_m = l0[0].to('m').magnitude
+    y = (df['Position (m)'].values + l0_m) / l0_m
 
     # Interpolate stretch at image times
     y_im = np.interp(imtimes, t, y)
