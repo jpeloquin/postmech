@@ -189,7 +189,7 @@ def move_extra(fpath):
                       os.path.join(undir, fname))
 
 def make_vic2d_lists(fp, mechcsv, interval=0.01, highres=None,
-                     fout='vic2d_list.csv',
+                     fout='vic2d_list.txt',
                      zero_strain='zero_strain',
                      start='vic2d_start',
                      end='vic2d_end'):
