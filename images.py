@@ -15,6 +15,8 @@ import os, re, sys, csv
 
 import numpy as np
 
+from uncertainties import ufloat
+
 import mechana
 from mechana import instron
 from mechana.unit import ureg
@@ -73,14 +75,13 @@ def image_scale(fpath):
             if unit == "px":
                 unit = ureg(unit)
                 px_d = float(line[0]) * unit
-                px_sd = float(line[1]) * unit
+                px_d = px_d.plus_minus(float(line[1]))
             else:
                 unit = ureg(unit)
                 d = float(line[0]) * unit
-                sd = float(line[1]) * unit
+                d = d.plus_minus(float(line[1]))
     scale = d / px_d
-    scale_sd = abs(scale) * ((sd / d)**2.0 + (px_sd / px_d)**2.0)**0.5
-    return scale, scale_sd
+    return scale
 
 def from_px(fpath, scale):
     """Reads ref_length.csv
@@ -88,10 +89,9 @@ def from_px(fpath, scale):
     scale := (value, sd)
 
     """
-    d, sd = mechana.read.measurement_csv(fpath)
-    mm_d =  d * scale[0]
-    mm_sd = abs(mm_d) * ((sd / d)**2.0 + (scale[1] / scale[0])**2.0)**0.5
-    return mm_d, mm_sd
+    d = mechana.read.measurement_csv(fpath)
+    mm_d =  d * scale
+    return mm_d
 
 def image_time(imname):
     """Parse image time from image filename.

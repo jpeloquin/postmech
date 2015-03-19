@@ -21,10 +21,11 @@ def measurement_csv(fpath):
             unit = ureg(line[-1])
             d = float(line[0]) * unit
             if line[1]:
-                sd = float(line[1]) * unit
+                sd = float(line[1])
             else:
-                sd = None
-    return d, sd
+                sd = 0
+            d = d.plus_minus(sd)
+    return d
 
 def bose_data(fpath):
     """Read a text data file exported by Wintest.
