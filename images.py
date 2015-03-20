@@ -234,7 +234,7 @@ def make_vic2d_lists(fp, mechcsv, interval=0.01, highres=None,
             inhighres = (y >= highres[0] and y <= highres[1])
         else:
             inhighres = False
-        if (t > t_start and t <= t_end
+        if (t >= t_start and t <= t_end
             and (y - yt > interval or inhighres)):
             yt = y
             selected_images.append(imnames[i])
