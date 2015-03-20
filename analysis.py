@@ -149,11 +149,11 @@ def stress_strain(spcdir, mechpath, areapath, lengthpath,
 
     # Read area
     area = mechana.read.measurement_csv(areapath)
-    area = area[0].to('m**2').magnitude
+    area = area.to('m**2')
 
     # Read reference length
     ref_length = mechana.read.measurement_csv(lengthpath)
-    ref_length = ref_length[0].to('m').magnitude
+    ref_length = ref_length.to('m')
 
     # If notched, reduce effective area
     if notchpath:
@@ -169,11 +169,13 @@ def stress_strain(spcdir, mechpath, areapath, lengthpath,
 
     # Calculate stretch and stress
     # Stretch
-    length = ref_length + (data['Position (m)']
-                           - data['Position (m)'][0])
-    data['Stretch Ratio'] = length / ref_length
+    # Uncertainty is discarded here
+    length = (ref_length.value.magnitude
+              + (data['Position (m)']
+                 - data['Position (m)'][0]))
+    data['Stretch Ratio'] = length / ref_length.value.magnitude
     # Stress
-    data['Stress (Pa)'] = data['Load (N)'] / area
+    data['Stress (Pa)'] = data['Load (N)'] / area.value.magnitude
 
     # Generate a plot
     fig = plt.figure(figsize=(4,3))
