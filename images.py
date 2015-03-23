@@ -39,10 +39,9 @@ def image_strain(imdir, mechcsv):
 
     """
     # Load image data
-    imnames = []
-    for fname in os.listdir(imdir):
-        if fname.endswith((".tiff", ".tif")):
-            imnames.append(fname)
+    imnames = [fname for fname in os.listdir(imdir)
+               if (fname.endswith((".tiff", ".tif"))
+                   and not os.path.splitext(fname)[0].endswith('ruler'))]
     imnames.sort()
     imdict = read_image_index(os.path.join(imdir, 'image_index.csv'))
     reftime = image_time(imdict["ref_time"])
