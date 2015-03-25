@@ -161,15 +161,21 @@ def get_image_list(fpath):
     image_index = dict((k, images.index(image_index[k]))
                        for k, v in image_index.iteritems()
                        if v != 'NA')
+
+    # Find last image
+    if 'end' in image_index:
+        i_end = image_index['end']
+    else:
+        i_end = len(images) - 1
+
     for i, fname in enumerate(images):
-        if (i >= image_index['ref_time'] and
+        if i > i_end:
+            curr_phase = 'extra'
+        elif (i >= image_index['ref_time'] and
             i < image_index['ramp_start']):
             curr_phase = 'preconditioning'
-        elif (i >= image_index['ramp_start'] and
-              i <= image_index['end']):
+        elif i >= image_index['ramp_start']:
             curr_phase = 'ramp'
-        else:
-            curr_phase = 'extra'
         imlist.append((fname, curr_phase))
     return imlist
 
