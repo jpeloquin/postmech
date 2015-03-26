@@ -1,0 +1,13 @@
+#+TITLE: Design of =mechana=
+#+AUTHOR: John M. Peloquin
+#+DATE: 2014-09-15
+
+* Purpose
+
+The =mechana= package is meant to facilitate analysis of mechanical test data in the Elliott lab.
+The current state of the package deals primarily with uniaxial tensile testing.
+
+* Important modules
+
+- =read= :: Read data files from Bluehill and Wintest.
+
