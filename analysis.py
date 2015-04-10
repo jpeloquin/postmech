@@ -130,22 +130,13 @@ def key_stress_pts(fpath, imdir=None):
     fout = os.path.join(dirname, "key_stress_pts_plot.svg")
     fig.savefig(fout)
 
-def stress_strain(spcdir, mechpath, areapath, lengthpath,
+def stress_strain(spcdir, data, areapath, lengthpath,
                   notchpath=None, widthpath=None,
-                  fmt='Bluehill', imdir=None,
+                  imdir=None,
                   fn_out="stress_strain"):
 
     if imdir is None:
         imdir = os.path.join(spcdir, "images")
-
-    # Read tensile test data
-    if fmt == 'Wintest':
-        data = mechana.read.bose_data(mechpath)
-    elif fmt == 'Bluehill':
-        data = mechana.read.instron_data(mechpath)
-    else:
-        raise Exception("Specified format '"
-                        + fmt + "' is not supported.")
 
     # Read area
     area = mechana.read.measurement_csv(areapath)
