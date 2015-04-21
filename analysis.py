@@ -130,6 +130,8 @@ def key_stress_pts(fpath, imdir=None):
     fout = os.path.join(dirname, "key_stress_pts_plot.svg")
     fig.savefig(fout)
 
+    plt.close(fig)
+
 def stress_strain(spcdir, data, areapath, lengthpath,
                   imdir=None, fn_out="stress_strain"):
 
@@ -175,6 +177,8 @@ def stress_strain(spcdir, data, areapath, lengthpath,
     ax.set_xlim(x0, x1)
     fig.tight_layout()
     fig.savefig(os.path.join(spcdir, fn_out + ".svg"))
+
+    plt.close(fig)
 
     # Write output
     outpath = os.path.join(spcdir, fn_out + ".csv")
