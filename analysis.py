@@ -131,7 +131,7 @@ def key_stress_pts(fpath, imdir=None):
     fig.savefig(fout)
 
 def stress_strain(spcdir, data, areapath, lengthpath,
-                  notchpath=None, widthpath=None,
+                  crackpath=None, widthpath=None,
                   imdir=None,
                   fn_out="stress_strain"):
 
@@ -147,8 +147,8 @@ def stress_strain(spcdir, data, areapath, lengthpath,
     ref_length = ref_length.to('m')
 
     # If notched, reduce effective area
-    if notchpath:
-        fpath = notchpath
+    if crackpath:
+        fpath = crackpath
         with open(fpath, 'rb') as f:
             reader = csv.reader(f)
             a = float(reader.next()[0])
