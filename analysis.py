@@ -131,9 +131,7 @@ def key_stress_pts(fpath, imdir=None):
     fig.savefig(fout)
 
 def stress_strain(spcdir, data, areapath, lengthpath,
-                  crackpath=None, widthpath=None,
-                  imdir=None,
-                  fn_out="stress_strain"):
+                  imdir=None, fn_out="stress_strain"):
 
     if imdir is None:
         imdir = os.path.join(spcdir, "images")
@@ -145,18 +143,6 @@ def stress_strain(spcdir, data, areapath, lengthpath,
     # Read reference length
     ref_length = mechana.read.measurement_csv(lengthpath)
     ref_length = ref_length.to('m')
-
-    # If notched, reduce effective area
-    if crackpath:
-        fpath = crackpath
-        with open(fpath, 'rb') as f:
-            reader = csv.reader(f)
-            a = float(reader.next()[0])
-        fpath = widthpath
-        with open(fpath, 'rb') as f:
-            reader = csv.reader(f)
-            w = float(reader.next()[0])
-        area = area * (1 - a / w)
 
     # Calculate stretch and stress
     # Stretch
