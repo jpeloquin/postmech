@@ -67,6 +67,8 @@ def listcsvs(directory):
 
 def readv2dcsv(f):
     df = pd.read_csv(f, skipinitialspace=True).dropna(how='all')
+    # ^ vic2d adds an extra line at the end, which gets read as a row
+    # of missing values.  Hence the dropna call.
     df['x'] = df['x'].astype(np.int)
     df['y'] = df['y'].astype(np.int)
     return df
@@ -243,18 +245,6 @@ def plot_strains(csvpath):
     xmax = max(df['x'])
     ymin = min(df['y'])
     ymax = max(df['y'])
-
-    def strainimg(df, field):
-        strainfield = np.empty((ymax+1, xmax+1))
-        strainfield.fill(np.nan)
-        x = df['x']
-        y = df['y']
-        v = df[field]
-        ind = zip(y, x)
-        strainfield[[y, x]] = v
-        #for i, j, val in zip(y, x, v):
-        #    strainfield[i, j] = val
-        return strainfield
 
     ## Initialize figure
     fig = plt.figure(figsize=(6.0, 2.5), dpi=300, facecolor='w')
