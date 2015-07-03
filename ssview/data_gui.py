@@ -140,6 +140,18 @@ class DataView(QtGui.QWidget):
         
         # self.stretch_vs_time.addItem(pg.PlotCurveItem())
 
+    def unload_data(self):
+        """Clear currently loaded data.
+
+        """
+        self.stretch_vs_time.clear()
+        self.stress_vs_time.clear()
+        self.stress_vs_stretch.clear()
+        self.camera_imitem.setImage()
+        self.exx_imitem.setImage()
+        self.eyy_imitem.setImage()
+        self.exy_imitem.setImage()
+
     @pyqtSlot()
     def on_stress_time_moved(self):
         """Move markers and update image plots to match current time.
