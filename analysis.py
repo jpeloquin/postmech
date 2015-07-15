@@ -132,9 +132,11 @@ def key_stress_pts(fpath, imdir=None):
 
     plt.close(fig)
 
-def stress_strain(spcdir, data, areapath, lengthpath,
-                  imdir=None, fn_out="stress_strain"):
+def tabulate_stress_strain(spcdir, data, areapath, lengthpath,
+                           imdir = None):
+    """Calculate stress strain and make table.
 
+    """
     if imdir is None:
         imdir = os.path.join(spcdir, "images")
 
@@ -156,30 +158,36 @@ def stress_strain(spcdir, data, areapath, lengthpath,
     # Stress
     data['Stress (Pa)'] = data['Load (N)'] / area.value.magnitude
 
+    return data
+
+def plot_stress_strain(sstable):
+    """Plot stress vs. strain for a tensile test.
+
+    """
     # Generate a plot
     fig = plt.figure(figsize=(4,3))
     ax = fig.add_subplot(111)
-    # converting to MPa
-    ax.plot(data["Stretch Ratio"],
-            data["Stress (Pa)"] / 1e6,
+
+    # Convert stress to MPa
+    ax.plot(sstable["Stretch Ratio"],
+            sstable["Stress (Pa)"] / 1e6,
             color='k')
     ax.set_xlabel("Stretch")
     ax.set_ylabel("Stress (MPa)")
-    # set x axis limits
-    x0 = data['Stretch Ratio'].min()
-    thresh = 0.01 * data['Stress (Pa)'].max()
-    if data['Stress (Pa)'].iget(-1) > thresh:
-        x1 = data['Stretch Ratio'].max()
-    else:
-        idx = next(i for i in data.index[::-1]
-                   if data['Stress (Pa)'][i] > thresh)
-        x1 = data['Stretch Ratio'][idx]
-    ax.set_xlim(x0, x1)
-    fig.tight_layout()
-    fig.savefig(os.path.join(spcdir, fn_out + ".svg"))
 
+    # Set x axis limits
+    x0 = sstable['Stretch Ratio'].min()
+    thresh = 0.01 * sstable['Stress (Pa)'].max()
+    if sstable['Stress (Pa)'].iget(-1) > thresh:
+        x1 = sstable['Stretch Ratio'].max()
+    else:
+        idx = next(i for i in sstable.index[::-1]
+                   if sstable['Stress (Pa)'][i] > thresh)
+        x1 = sstable['Stretch Ratio'][idx]
+    ax.set_xlim(x0, x1)
+
+    # Re-layout figure
+    fig.tight_layout()
     plt.close(fig)
 
-    # Write output
-    outpath = os.path.join(spcdir, fn_out + ".csv")
-    data.to_csv(outpath, index=False)
+    return fig
