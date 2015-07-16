@@ -18,12 +18,30 @@ def label_unit(text):
     """
     pass
 
+def stress_crossing(tab, thresh, direction='left'):
+    """Find stress-strain point crossing a stress threshold.
+
+    """
+    # find index of first stress value, from right, that exceeds
+    # the threshold
+    if tab['Stress (Pa)'].iget(-1) > thresh:
+        # Last stress value already exceeds threshold
+        idx = None
+    else:
+        sign_from_dir = {'left': -1,
+                         'right': 1}
+        idx = next(i for i in tab.index[::sign_from_dir[direction]]
+                   if tab['Stress (Pa)'][i] > thresh)
+
+    return idx
+
+
 def key_stress_pts(fpath, imdir=None):
     """Find image frames corresponding to key stress values.
 
     Points calculated:
     - Peak (max) stress
-    - 5% of peak stress, counting backward
+    - 1%, 2%, and 5% of peak stress, counting backward
 
     """
     # Get paths
@@ -63,16 +81,8 @@ def key_stress_pts(fpath, imdir=None):
     idx_res = []
     for f in resfrac:
         key = '{}% residual strength'.format(int(round(f * 100)))
-        res_stress = f * peak_stress
 
-        # find index of first stress value, from right, that exceeds
-        # the threshold
-        if df['Stress (Pa)'].iget(-1) > res_stress:
-            # Last stress value already exceeds threshold
-            idx = None
-        else:
-            idx = next(i for i in df.index[::-1]
-                       if df['Stress (Pa)'][i] > res_stress)
+        idx = stress_crossing(df, thresh = f * peak_stress)
         idx_res.append(idx)
 
         # find index of corresponding image (nearest following time)
