@@ -4,8 +4,7 @@ import pyqtgraph as pg
 import numpy as np
 import os
 
-from datainput import cmap_div, cmap_div_lut
-from datainput import TestData
+from datainput import cmap_div, cmap_div_lut, TestData
 
 def debug_trace():
     '''Set a tracepoint in the Python debugger that works with Qt'''
