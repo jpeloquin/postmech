@@ -49,7 +49,7 @@ def key_stress_pts(fpath, imdir=None):
     # Get mechanical data
     df = pd.read_csv(fpath)
     # Get image data
-    if imdir is None:
+    if pd.isnull(imdir):
         imdir = os.path.join(dirname, "images")
     imlist = [os.path.basename(s)
               for s in mechana.images.list_images(imdir)]
