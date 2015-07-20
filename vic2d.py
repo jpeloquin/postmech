@@ -210,20 +210,24 @@ def summarize_vic2d(vicdir, imdir):
            'q95': q95}
     return out
 
-def strainimg(df, field):
+def strainimg(df, field, bbox=None):
     """Create a strain image from a list of values.
 
+    bb := bounding box [xmin, xmax, ymin, ymax]
+
+    Note that currently xmin and ymin are always considered to be
+    zero.
+
     """
-    xmin = min(df['x'])
-    xmax = max(df['x'])
-    ymin = min(df['y'])
-    ymax = max(df['y'])
-    strainfield = np.empty((ymax+1, xmax+1))
+    if bbox is None:
+        bbox = [min(df['x']), max(df['x']),
+                min(df['y']), max(df['y'])]
+
+    strainfield = np.empty((bbox[3] + 1, bbox[1] + 1))
     strainfield.fill(np.nan)
     x = df['x']
     y = df['y']
     v = df[field]
-    ind = zip(y, x)
     strainfield[[y, x]] = v
     #for row in df.iterrows():
     #    r = row[1]

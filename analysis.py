@@ -82,17 +82,20 @@ class MechanicalTest(object):
             dfs = (mechana.vic2d.readv2dcsv(fp)
                    for fp in vic2dfiles)
 
-            def get_fields(df):
-                exx = mechana.vic2d.strainimg(df, 'exx')
-                eyy = mechana.vic2d.strainimg(df, 'eyy')
-                exy = mechana.vic2d.strainimg(df, 'exy')
+            def get_fields(df, bbox=None):
+                exx = mechana.vic2d.strainimg(df, 'exx', bbox)
+                eyy = mechana.vic2d.strainimg(df, 'eyy', bbox)
+                exy = mechana.vic2d.strainimg(df, 'exy', bbox)
                 fields = {'exx': exx,
                           'eyy': eyy,
                           'exy': exy}
                 return fields
 
-            fieldlist = [get_fields(df) for df in dfs]
-            self.strainfields = fieldlist
+            self.strainfields = []
+            for df in dfs:
+                bbox = [0, max(df['x']),
+                        0, max(df['y'])]
+                self.strainfields.append(get_fields(df, bbox))
 
             csvnames = (os.path.basename(f) for f in vic2dfiles)
             fieldtimes = [mechana.images.image_time(nm)
