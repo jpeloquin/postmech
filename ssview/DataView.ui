@@ -155,7 +155,7 @@
   <customwidget>
    <class>MarkerPlotWidget</class>
    <extends>QGraphicsView</extends>
-   <header>data_gui</header>
+   <header>mechana.ssview.data_gui</header>
   </customwidget>
  </customwidgets>
  <resources/>
