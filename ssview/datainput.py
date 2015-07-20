@@ -12,7 +12,7 @@ def debug_trace():
     pyqtRemoveInputHook()
     set_trace()
 
-cmap_div = pg.ColorMap(pos=np.arange(0.0, 1.0, 0.1),
+cmap_div = pg.ColorMap(pos=np.linspace(0.0, 1.0, 11),
                        color=np.array([[0.0941, 0.3098, 0.6353, 1.0],
                                        [0.2745, 0.3882, 0.6824, 1.0],
                                        [0.4275, 0.6000, 0.8078, 1.0],
