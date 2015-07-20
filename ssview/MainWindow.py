@@ -11,35 +11,41 @@ from data_gui import DataView
 
 class MainWindow(QtGui.QMainWindow):
 
-    # Variables
-    currentfile = None
-
-    # Gui objects
-    data_view = None
-
-    # Signals
-    signalDataChanged = pyqtSignal()
-
     def __init__(self, parent=None):
         # Initialize the Qt parts of the UI
         super(MainWindow, self).__init__(parent)
         codedir = os.path.dirname(os.path.abspath(__file__))
         uic.loadUi(os.path.join(codedir, 'MainWindow.ui'), self)
+
+        # Variables
+        currentfile = None
+
+        # Gui objects
+        data_view = None
+
+        # Signals
+        signalDataChanged = pyqtSignal()
+
         # Initialize the python parts of the UI
         self.data_view = DataView(parent_window=self)
-        self.actionOpen.triggered.connect(self.open_file)
+        self.actionOpen.triggered.connect(self.ui_open)
         self.actionQuit.triggered.connect(QtGui.qApp.quit)
         self.setCentralWidget(self.data_view)
 
-    def open_file(self):
-        # Load mechanical data
-        fpath = str(QtGui.QFileDialog.getOpenFileName(self,
-            'Open test data JSON file'))
-        self.currentfile = fpath
-        self.data_view.load_data(fpath)
+    def ui_open(self):
+        """Get file path from user and open data listed in it.
 
-        #self.mwidg.imstack.update_data(times=d[0],
-        #                               images=d[1])        
+        """
+        msg = 'Open test data JSON file'
+        pth = str(QtGui.QFileDialog.getOpenFileName(self, msg))
+        self.load_data(pth)
+
+    def load_data(self, pth):
+        """Load data listed in a .json file.
+
+        """
+        self.currentfile = pth
+        self.data_view.load_data(pth)
 
     def load_images(self, imdir):
         """Load images into memory and find time of each frame.
@@ -74,11 +80,17 @@ class MainWindow(QtGui.QMainWindow):
             images.append(np.array(Image.open(fpath)).T)
         return sorted(zip(imtime, images))
 
-def main():
+def main(pth_data=None):
     win = MainWindow()
     win.show()
+    if pth_data is not None:
+        win.load_data(pth_data)
     app.exec_()
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
-    main()
+    if len(sys.argv) > 1:
+        pth_data = sys.argv[1]
+    else:
+        pth_data = None
+    main(pth_data=pth_data)
