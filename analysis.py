@@ -8,6 +8,7 @@ import csv
 import json
 import os
 import re
+import multiprocessing
 
 import numpy as np
 import pandas as pd
@@ -79,8 +80,10 @@ class MechanicalTest(object):
                                 "without an offset defined "
                                 "for the image time codes.")
             vic2dfiles = mechana.vic2d.listcsvs(vic2dfolder)
-            dfs = (mechana.vic2d.readv2dcsv(fp)
-                   for fp in vic2dfiles)
+
+            ncpu = multiprocessing.cpu_count()
+            p = multiprocessing.Pool(ncpu)
+            dfs = p.map(mechana.vic2d.readv2dcsv, vic2dfiles)
 
             def get_fields(df, bbox=None):
                 exx = mechana.vic2d.strainimg(df, 'exx', bbox)
