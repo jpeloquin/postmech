@@ -37,7 +37,7 @@ def render_image(img, levels=None):
         levels = [-extremum, extremum]
     img[isnan] = 0
     img_argb, b = pg.makeRGBA(img, levels=levels, lut=cmap_div_lut)
-    img_argb[isnan] = 0
+    img_argb = img_argb * np.logical_not(np.expand_dims(isnan, 2))
     return img_argb
 
 class TestData(MechanicalTest):
