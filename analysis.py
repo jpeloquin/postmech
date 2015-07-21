@@ -93,8 +93,8 @@ class MechanicalTest(object):
 
             self.strainfields = []
             for df in dfs:
-                bbox = [0, max(df['x']),
-                        0, max(df['y'])]
+                bbox = [0, np.max(df['x']),
+                        0, np.max(df['y'])]
                 self.strainfields.append(get_fields(df, bbox))
 
             csvnames = (os.path.basename(f) for f in vic2dfiles)

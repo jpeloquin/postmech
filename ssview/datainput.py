@@ -28,16 +28,15 @@ cmap_div_lut = cmap_div.getLookupTable()
 
 def render_image(img, levels=None):
     isnan = np.isnan(img)
-    extrema = np.percentile(img[~np.isnan(img)], (5, 95))
+    extrema = np.percentile(img[~isnan], (5, 95))
     absmax = np.abs(np.max(img))
     if absmax == 0.0:
         absmax = 1.0
     if levels is None:
         extremum = np.max(np.abs(extrema))
         levels = [-extremum, extremum]
-    img_argb = np.nan_to_num(img)
-    img_argb, b = pg.makeRGBA(np.nan_to_num(img),
-                              levels=levels, lut=cmap_div_lut)
+    img[isnan] = 0
+    img_argb, b = pg.makeRGBA(img, levels=levels, lut=cmap_div_lut)
     img_argb[isnan] = 0
     return img_argb
 
