@@ -44,22 +44,21 @@ class TestData(MechanicalTest):
     """Test data (mechanical data, images, strain fields).
 
     """
-
     def __init__(self, *args):
         super(TestData, self).__init__(*args)
 
         # Get overall quantiles for each strain field
-        fnames = ['exx', 'eyy', 'exy']
-        extrema = {}
-        for fn in fnames:
-            ims = (fd[fn] for fd in self.strainfields)
+        components = ['exx', 'eyy', 'exy']
+        self.extrema = {}
+        for c in components:
+            ims = (fd[c] for fd in self.strainfields)
             ims = (im[~np.isnan(im)] for im in ims)
             l = (max(np.abs(np.percentile(im, (5, 95))))
                  for im in ims)
-            extrema[fn] = max(l)
+            self.extrema[c] = max(l)
 
         # Render strainfields for quick display
-        self.strainfields_argb = [self._render_field_dict(fd, extrema)
+        self.strainfields_argb = [self._render_field_dict(fd, self.extrema)
                                   for fd in self.strainfields]
 
     def _render_field_dict(self, fields, extrema):
@@ -67,7 +66,7 @@ class TestData(MechanicalTest):
         for k in fields:
             levels = (-extrema[k], extrema[k])
             fields_rgba[k] = render_image(fields[k],
-                                              levels=levels)
+                                          levels=levels)
         return fields_rgba
 
     def strainfields_at(self, t):
