@@ -28,11 +28,11 @@ cmap_div_lut = cmap_div.getLookupTable()
 
 def render_image(img, levels=None):
     isnan = np.isnan(img)
-    extrema = np.percentile(img[~isnan], (5, 95))
     absmax = np.abs(np.max(img))
     if absmax == 0.0:
         absmax = 1.0
     if levels is None:
+        extrema = np.percentile(img[~isnan], (5, 95))
         extremum = np.max(np.abs(extrema))
         levels = [-extremum, extremum]
     img[isnan] = 0
