@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 
 import mechana
 from mechana.unit import ureg
+from mechana.vic2d import read_strain_components
 
 class MechanicalTest(object):
     """Mechanical test data.
@@ -79,26 +80,13 @@ class MechanicalTest(object):
                                 "to mechanical test data "
                                 "without an offset defined "
                                 "for the image time codes.")
+
+            # Read strain components from Vic-2D csv files
             vic2dfiles = mechana.vic2d.listcsvs(vic2dfolder)
 
             ncpu = multiprocessing.cpu_count()
             p = multiprocessing.Pool(ncpu)
-            dfs = p.map(mechana.vic2d.readv2dcsv, vic2dfiles)
-
-            def get_fields(df, bbox=None):
-                exx = mechana.vic2d.strainimg(df, 'exx', bbox)
-                eyy = mechana.vic2d.strainimg(df, 'eyy', bbox)
-                exy = mechana.vic2d.strainimg(df, 'exy', bbox)
-                fields = {'exx': exx,
-                          'eyy': eyy,
-                          'exy': exy}
-                return fields
-
-            self.strainfields = []
-            for df in dfs:
-                bbox = [0, np.max(df['x']),
-                        0, np.max(df['y'])]
-                self.strainfields.append(get_fields(df, bbox))
+            self.strainfields = p.map(read_strain_components, vic2dfiles)
 
             csvnames = (os.path.basename(f) for f in vic2dfiles)
             fieldtimes = [mechana.images.image_time(nm)

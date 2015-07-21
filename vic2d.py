@@ -229,14 +229,22 @@ def strainimg(df, field, bbox=None):
     y = df['y']
     v = df[field]
     strainfield[[y, x]] = v
-    #for row in df.iterrows():
-    #    r = row[1]
-    #    try:
-    #        strainfield[(r['y'], r['x'])] = r[field]
-    #    except IndexError:
-    #    print('Warning: x or y index in row {} '
-    #    'is blank.'.format(row[0]))
     return strainfield
+
+def read_strain_components(pth):
+    """Read all strain component images from a Vic-2D csv file.
+
+    """
+    table = readv2dcsv(pth)
+    bbox = [0, np.max(table['x']),
+            0, np.max(table['y'])]
+    exx = mechana.vic2d.strainimg(table, 'exx', bbox)
+    eyy = mechana.vic2d.strainimg(table, 'eyy', bbox)
+    exy = mechana.vic2d.strainimg(table, 'exy', bbox)
+    components = {'exx': exx,
+                  'eyy': eyy,
+                  'exy': exy}
+    return components
 
 def plot_strains(csvpath):
     """Plot strain from a Vic-2D .csv file.
