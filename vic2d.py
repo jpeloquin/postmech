@@ -223,10 +223,12 @@ def strainimg(df, field, bbox=None):
         bbox = [min(df['x']), max(df['x']),
                 min(df['y']), max(df['y'])]
 
-    strainfield = np.empty((bbox[3] + 1, bbox[1] + 1))
+    # Vic-2D indexes x and y from 0
+    strainfield = np.empty((bbox[3] - bbox[2] + 1,
+                            bbox[1] - bbox[0] + 1))
     strainfield.fill(np.nan)
-    x = df['x']
-    y = df['y']
+    x = df['x'] - bbox[0]
+    y = df['y'] - bbox[2]
     v = df[field]
     strainfield[[y, x]] = v
     return strainfield
@@ -236,8 +238,8 @@ def read_strain_components(pth):
 
     """
     table = readv2dcsv(pth)
-    bbox = [0, np.max(table['x']),
-            0, np.max(table['y'])]
+    bbox = [np.min(table['x'].values), np.max(table['x'].values),
+            np.min(table['y'].values), np.max(table['y'].values)]
     exx = mechana.vic2d.strainimg(table, 'exx', bbox)
     eyy = mechana.vic2d.strainimg(table, 'eyy', bbox)
     exy = mechana.vic2d.strainimg(table, 'exy', bbox)
