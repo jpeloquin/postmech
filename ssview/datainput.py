@@ -2,6 +2,7 @@ import numpy as np
 import pyqtgraph as pg
 
 from mechana.analysis import MechanicalTest
+from render import render_strain
 
 def debug_trace():
     """Set a tracepoint in the Python debugger that works with Qt.
@@ -11,34 +12,6 @@ def debug_trace():
     from pdb import set_trace
     pyqtRemoveInputHook()
     set_trace()
-
-cmap_div = pg.ColorMap(pos=np.linspace(0.0, 1.0, 11),
-                       color=np.array([[0.0941, 0.3098, 0.6353, 1.0],
-                                       [0.2745, 0.3882, 0.6824, 1.0],
-                                       [0.4275, 0.6000, 0.8078, 1.0],
-                                       [0.6275, 0.7451, 0.8824, 1.0],
-                                       [0.8118, 0.8863, 0.9412, 1.0],
-                                       [0.9451, 0.9569, 0.9608, 1.0],
-                                       [0.9569, 0.8549, 0.7843, 1.0],
-                                       [0.9725, 0.7216, 0.5451, 1.0],
-                                       [0.8824, 0.5725, 0.2549, 1.0],
-                                       [0.7333, 0.4706, 0.2118, 1.0],
-                                       [0.5647, 0.3922, 0.1725, 1.0]]))
-cmap_div_lut = cmap_div.getLookupTable()
-
-def render_image(img, levels=None):
-    isnan = np.isnan(img)
-    absmax = np.abs(np.max(img))
-    if absmax == 0.0:
-        absmax = 1.0
-    if levels is None:
-        extrema = np.percentile(img[~isnan], (5, 95))
-        extremum = np.max(np.abs(extrema))
-        levels = [-extremum, extremum]
-    img[isnan] = 0
-    img_argb, b = pg.makeRGBA(img, levels=levels, lut=cmap_div_lut)
-    img_argb = img_argb * np.logical_not(np.expand_dims(isnan, 2))
-    return img_argb
 
 class TestData(MechanicalTest):
     """Test data (mechanical data, images, strain fields).
@@ -65,8 +38,8 @@ class TestData(MechanicalTest):
         fields_rgba = dict()
         for k in fields:
             levels = (-extrema[k], extrema[k])
-            fields_rgba[k] = render_image(fields[k],
-                                          levels=levels)
+            fields_rgba[k] = render_strain(fields[k],
+                                           levels=levels)
         return fields_rgba
 
     def strainfields_at(self, t):
