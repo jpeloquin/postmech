@@ -69,6 +69,8 @@ def readv2dcsv(f):
     df = pd.read_csv(f, skipinitialspace=True).dropna(how='all')
     # ^ vic2d adds an extra line at the end, which gets read as a row
     # of missing values.  Hence the dropna call.
+    if len(df) == 0:
+        raise ValueError("{} has zero rows of data.".format(f))
     df['x'] = df['x'].astype(np.int)
     df['y'] = df['y'].astype(np.int)
     return df
