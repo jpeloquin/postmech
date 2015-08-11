@@ -201,21 +201,6 @@ class DataView(QtGui.QWidget):
             self.eyy_imitem.setImage(fields_rgba['eyy'])
             self.exy_imitem.setImage(fields_rgba['exy'])
 
-    def old_init():
-        self.ssitem = pg.PlotCurveItem()
-        self.ssplot.addItem(self.ssitem)
-        # Create image item
-        self.imitem = pg.ImageItem()
-        self.vbox = pg.ViewBox()
-        self.gview_video.setCentralItem(self.vbox)
-        self.vbox.setAspectLocked(True)
-        # self.vbox.invertY()
-        self.vbox.addItem(self.imitem)
-        self.imstack = ImageStack()
-        # Connect signals and slots
-        self.signalDataChanged.connect(self.handle_data_changed)
-        self.imstack.signalDataChanged.connect(self.load_images)
-
     def update_mechdata(self, time, stretch, stress):
         self.mechtime = np.array(time)
         self.stretch = np.array(stretch)
