@@ -1,8 +1,10 @@
+import os
+
+import numpy as np
+
 from PyQt4 import QtGui, QtCore, uic
 from PyQt4.QtCore import pyqtSlot, pyqtSignal, QObject
 import pyqtgraph as pg
-import numpy as np
-import os
 
 from datainput import TestData
 from render import cmap_div, cmap_div_lut
@@ -10,7 +12,7 @@ from render import cmap_div, cmap_div_lut
 def debug_trace():
     '''Set a tracepoint in the Python debugger that works with Qt'''
     from PyQt4.QtCore import pyqtRemoveInputHook
-    from pdb import set_trace
+    from ipdb import set_trace
     pyqtRemoveInputHook()
     set_trace()
 
@@ -99,9 +101,12 @@ class DataView(QtGui.QWidget):
         link_views_xy(self.eyy_viewbox, self.exx_viewbox)
         link_views_xy(self.exy_viewbox, self.exx_viewbox)
         # Add colorbar to strain field plots
-        self.color_widget = pg.HistogramLUTWidget()
+        self.color_widget = pg.HistogramLUTWidget(image=self.exx_imitem)
         self.color_widget.gradient.setColorMap(cmap_div)
         self.field_layout.addWidget(self.color_widget)
+        # Add different color scale legend
+        self.color_legend_item = pg.GradientLegend((10, 100), (10, 30))
+        self.color_legend_item.setParentItem(self.exx_viewbox)
         # Connect signals to slots for marker  
         self.stress_vs_stretch.marker.sigDragged.connect(self.on_stress_stretch_moved)
         self.stress_vs_time.marker.sigDragged.connect(self.on_stress_time_moved)
@@ -197,7 +202,7 @@ class DataView(QtGui.QWidget):
         # Strain fields
         if self.data.strainfields is not None:
             fields, fields_rgba, fieldtime = self.data.strainfields_at(self.t)
-            self.exx_imitem.setImage(fields_rgba['exx'])
+            self.exx_imitem.setImage(fields['exx'])
             self.eyy_imitem.setImage(fields_rgba['eyy'])
             self.exy_imitem.setImage(fields_rgba['exy'])
 
@@ -206,7 +211,7 @@ class DataView(QtGui.QWidget):
         self.stretch = np.array(stretch)
         self.stress = np.array(stress)
 
-#        labelStyle = {'font-size': '14px'}
+        # labelStyle = {'font-size': '14px'}
         self.ssplot.setLabel('left', text='Stress', 
                              units='Pa')
         self.ssplot.setLabel('bottom', text='Stretch Ratio')
@@ -303,3 +308,24 @@ class ImageStack(QObject):
         idx = min(enumerate(self.times),
                   key=lambda tup: abs(tup[1]-time))[0]
         return self.images[idx]
+
+class ColorLegendWidget(pg.GraphicsView):
+
+    def __init__(self, parent=None, *args, **kargs):
+        background = kargs.get('background', 'default')
+        GraphicsView.__init__(self, parent, useOpenGL=False, background=background)
+        # self.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Expanding)
+        # self.setMinimumHeight(95)
+
+    
+class ColorLegendItem(GraphicsWidget):
+    """A Widget to show a color legend for an image.
+
+    This Widget was inspired by HistogramLUTItem.  Compared to
+    HistogramLUTItem, it can display the color legend horizontally.
+    However, it does not provide any lookup table editing
+    functionality, although the image levels can still be set.  The
+    primary purpose of this Widget is simply to display the scale.
+
+    """
+    
