@@ -352,6 +352,8 @@ class ImageItem(GraphicsObject):
         if np.isscalar(step):
             step = (step, step)
         stepData = self.image[::step[0], ::step[1]]
+        stepData = np.reshape(stepData, -1)
+        stepData = stepData[np.logical_not(np.isnan(stepData))]
         
         if bins == 'auto':
             if stepData.dtype.kind in "ui":
