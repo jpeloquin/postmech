@@ -60,7 +60,7 @@ class DataView(QtGui.QWidget):
         self.parent_window = parent_window
         # Format line plots
         self.stretch_vs_time.setLabel('left', text='Stretch Ratio')
-        self.stretch_vs_time.setLabel('bottom', text='Time', 
+        self.stretch_vs_time.setLabel('bottom', text='Time',
                                       units='s')
         self.stress_vs_time.setLabel('left', text='Stress', units='Pa')
         self.stress_vs_time.setLabel('bottom', text='Time', units='s')
@@ -104,10 +104,11 @@ class DataView(QtGui.QWidget):
         self.color_widget = pg.HistogramLUTWidget(image=self.exx_imitem)
         self.color_widget.gradient.setColorMap(cmap_div)
         self.field_layout.addWidget(self.color_widget)
-        # Add different color scale legend
-        self.color_legend_item = pg.GradientLegend((10, 100), (10, 30))
-        self.color_legend_item.setParentItem(self.exx_viewbox)
-        # Connect signals to slots for marker  
+        # Add color legend
+        self.color_legend = ColorLegendWidget()
+        self.field_layout.addWidget(self.color_legend)
+
+        # Connect signals to slots for marker
         self.stress_vs_stretch.marker.sigDragged.connect(self.on_stress_stretch_moved)
         self.stress_vs_time.marker.sigDragged.connect(self.on_stress_time_moved)
         self.stretch_vs_time.marker.sigDragged.connect(self.on_stretch_time_moved)
@@ -142,7 +143,7 @@ class DataView(QtGui.QWidget):
         self.stress_vs_stretch.marker.show()
         self.stress_vs_time.marker.show()
         self.stretch_vs_time.marker.show()
-        
+
         # self.stretch_vs_time.addItem(pg.PlotCurveItem())
 
     def unload_data(self):
@@ -212,7 +213,7 @@ class DataView(QtGui.QWidget):
         self.stress = np.array(stress)
 
         # labelStyle = {'font-size': '14px'}
-        self.ssplot.setLabel('left', text='Stress', 
+        self.ssplot.setLabel('left', text='Stress',
                              units='Pa')
         self.ssplot.setLabel('bottom', text='Stretch Ratio')
 
@@ -283,10 +284,10 @@ class ImageStack(QObject):
 
     def update_data(self, times=None, images=None):
         """Replace image data
-        
+
         time is a list of time values
         imlist is a list of 2-D images
-        
+
         """
         if times:
             self.times = times
@@ -313,12 +314,15 @@ class ColorLegendWidget(pg.GraphicsView):
 
     def __init__(self, parent=None, *args, **kargs):
         background = kargs.get('background', 'default')
-        GraphicsView.__init__(self, parent, useOpenGL=False, background=background)
+        super(ColorLegendWidget, self).__init__(parent, useOpenGL=False,
+                                                background=background)
+        self.item = ColorLegendItem(*args, **kargs)
+        self.setCentralItem(self.item)
         # self.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Expanding)
         # self.setMinimumHeight(95)
 
-    
-class ColorLegendItem(GraphicsWidget):
+
+class ColorLegendItem(pg.GraphicsWidget):
     """A Widget to show a color legend for an image.
 
     This Widget was inspired by HistogramLUTItem.  Compared to
@@ -328,4 +332,95 @@ class ColorLegendItem(GraphicsWidget):
     primary purpose of this Widget is simply to display the scale.
 
     """
-    
+    def __init__(self):
+        super(ColorLegendItem, self).__init__()
+        self.layout = QtGui.QGraphicsGridLayout()
+        self.setLayout(self.layout)
+
+        # Default parameters
+        self.xmin = 0
+        self.xmax = 1
+
+        # Set up histogram and selector for range of colormap
+        self.vb = pg.ViewBox(parent=self)
+        self.vb.setXRange(self.xmin, self.xmax)
+        self.region = pg.LinearRegionItem([self.xmin, self.xmax], pg.LinearRegionItem.Vertical)
+        self.region.setBounds([self.xmin, self.xmax])
+        self.histogram = pg.PlotDataItem()
+        self.vb.addItem(self.region)
+        self.vb.addItem(self.histogram)
+
+        self.axis = pg.AxisItem('bottom', linkView=self.vb, parent=self)
+        self.axis.setRange(0, 1) # Just to get axis on manual range mode
+        #self.colorbar = ColorBar()
+        self.colorbar = ColorBar()
+
+        self.layout.addItem(self.colorbar, 0, 0)
+        self.layout.addItem(self.vb, 1, 0)
+        self.layout.addItem(self.axis, 2, 0)
+
+        label_style = {'font-size': '14pt', 'color': 'white'}
+        self.axis.setLabel('e<sub>xx</sub>', **label_style)
+
+    def paint(self, p, *args):
+        xlim = self.region.getRegion()
+        p1 = self.vb.mapFromViewToItem(self, pg.Point(xlim[0], self.vb.viewRect().center().y()))
+        p2 = self.vb.mapFromViewToItem(self, pg.Point(xlim[1], self.vb.viewRect().center().y()))
+        colorbar_rect = self.colorbar.mapRectToParent(self.colorbar.colorbar.rect())
+        pen = self.region.lines[0].pen
+        p.setPen(pen)
+        p.drawLine(p1, colorbar_rect.bottomLeft())
+        p.drawLine(p2, colorbar_rect.bottomRight())
+
+    def setColorMap(self, cm):
+        pass
+
+
+class ColorBar(pg.GraphicsWidget):
+    """A plain old colorbar.
+
+    """
+    def __init__(self, *kargs, **kwargs):
+        super(ColorBar, self).__init__()
+        # Default parameters
+        self.w = 200
+        self.h = 30
+        self.setMaximumHeight(self.h)
+        self.setMaximumWidth(16777215)
+        self.colorbar = QtGui.QGraphicsRectItem(QtCore.QRectF(0, 0, self.w, self.h))
+        self.colorbar.setParentItem(self)
+
+        self.gradient = self.getGradient()
+        self.colorbar.setBrush(QtGui.QBrush(self.gradient))
+
+        #self.translate(0, -self.h)
+        #self.sigGradientChanged.emit(self)
+
+        #self.setFixedHeight(self.h)
+
+    def getGradient(self):
+        """Return a QLinearGradientObject."""
+        g = pg.QtGui.QLinearGradient(0.0, 0.0, self.w, self.h)
+        stops = np.array([0, 0.5, 1.0])
+        colors = np.array([[1.0, 1.0, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0], [1.0, 0.0, 0.0, 1.0]])
+        stops = [(a, pg.QtGui.QColor(*[255*c for c in b])) for a, b in zip(stops, colors)]
+        g.setStops(stops)
+        return g
+
+    def resizeEvent(self, ev):
+        """Fired by Qt when widget is (re)sized."""
+        self.w = self.width()
+        # self.width is from pg.GraphicsWidget
+        self.colorbar.setRect(0.0, 0.0, self.w, self.h)
+        self.updateGradient()
+
+    def updateGradient(self):
+        """Update the displayed gradient.
+
+        It is appropriate to call this after (1) resizing, in which
+        case the gradient must be painted over a different region or
+        (2) the underlying colormap changing.
+
+        """
+        self.gradient = self.getGradient()
+        self.colorbar.setBrush(QtGui.QBrush(self.gradient))
