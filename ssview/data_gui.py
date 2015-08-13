@@ -102,10 +102,6 @@ class DataView(QtGui.QWidget):
         # link axes of strain field plots
         link_views_xy(self.eyy_viewbox, self.exx_viewbox)
         link_views_xy(self.exy_viewbox, self.exx_viewbox)
-        # Add colorbar to strain field plots
-        self.color_widget = pg.HistogramLUTWidget(image=self.exx_imitem)
-        self.color_widget.gradient.setColorMap(cmap_div)
-        self.field_layout.addWidget(self.color_widget)
         # Add color legend
         self.color_legend = ColorLegendWidget()
         self.color_legend.setColormap(cmap_div)
@@ -211,7 +207,7 @@ class DataView(QtGui.QWidget):
         # Strain fields
         if self.data.strainfields is not None:
             fields, fields_rgba, fieldtime = self.data.strainfields_at(self.t)
-            self.exx_imitem.setImage(fields['exx'])
+            self.exx_imitem.setImage(fields_rgba['exx'])
             img = render_strain(fields['eyy'],
                                 levels=self.color_legend.item.levels)
             data = fields['eyy'].reshape(-1)
