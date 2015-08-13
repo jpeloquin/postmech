@@ -16,6 +16,15 @@ def debug_trace():
     pyqtRemoveInputHook()
     set_trace()
 
+ # Create image displays
+def _create_imview():
+    vb = pg.ViewBox()
+    vb.setAspectLocked(True)
+    vb.invertY()
+    imitem = pg.ImageItem()
+    vb.addItem(imitem)
+    return vb, imitem
+
 
 class MarkerPlotWidget(pg.PlotWidget):
     marker = None
@@ -72,47 +81,62 @@ class DataView(QtGui.QWidget):
         # Link time axes
         self.stretch_vs_time.setXLink(self.stress_vs_time)
 
-        # Create image displays
-        def create_imview():
-            vb = pg.ViewBox()
-            vb.setAspectLocked(True)
-            vb.invertY()
-            imitem = pg.ImageItem()
-            vb.addItem(imitem)
-            return vb, imitem
         def link_views_xy(view1, view2):
             """Sets view1 to follow view2."""
             view1.setXLink(view2)
             view1.setYLink(view2)
         # Camera view
-        self.camera_viewbox, self.camera_imitem = create_imview()
+        self.camera_viewbox, self.camera_imitem = _create_imview()
         self.camera_plotitem = pg.PlotItem(viewBox=self.camera_viewbox)
         self.camera_plotitem.showAxis('left', show=False)
         self.camera_plotitem.showAxis('bottom', show=False)
         self.cameraview.setCentralItem(self.camera_plotitem)
-        # exx
-        self.exx_viewbox, self.exx_imitem = create_imview()
-        self.exxview.setCentralItem(self.exx_viewbox)
-        # eyy
-        self.eyy_viewbox, self.eyy_imitem = create_imview()
-        self.eyyview.setCentralItem(self.eyy_viewbox)
-        # exy
-        self.exy_viewbox, self.exy_imitem = create_imview()
-        self.exyview.setCentralItem(self.exy_viewbox)
-        # link axes of strain field plots
-        link_views_xy(self.eyy_viewbox, self.exx_viewbox)
-        link_views_xy(self.exy_viewbox, self.exx_viewbox)
-        # Add color legend
-        self.color_legend = ColorLegendWidget()
-        self.color_legend.setColormap(cmap_div)
-        self.color_legend.item.setImageItem(self.eyy_imitem)
-        self.field_layout.addWidget(self.color_legend)
-        self.color_legend.item.region.sigRegionChanged.connect(self.update_images)
 
-        # Connect signals to slots for marker
-        self.stress_vs_stretch.marker.sigDragged.connect(self.on_stress_stretch_moved)
-        self.stress_vs_time.marker.sigDragged.connect(self.on_stress_time_moved)
-        self.stretch_vs_time.marker.sigDragged.connect(self.on_stretch_time_moved)
+        # Add strain field viewers
+        self.components = ['exx', 'eyy', 'exy']
+        self.component_labels = {'exx': 'e<sub>xx</sub>',
+                                 'eyy': 'e<sub>yy</sub>',
+                                 'exy': 'e<sub>xy</sub>'}
+        self.strain_widget = {}
+        self.strain_layout ={}
+        self.strain_view = {}
+        self.strain_vb = {}
+        self.strain_imitem = {}
+        self.strain_legend = {}
+        for c in self.components:
+            self.strain_view[c] = pg.GraphicsView()
+            vb, imitem = _create_imview()
+            self.strain_vb[c] = vb
+            self.strain_imitem[c] = imitem
+            self.strain_view[c].setCentralItem(vb)
+            # Add color legend
+            self.strain_legend[c] = ColorLegendWidget()
+            self.strain_legend[c].setColormap(cmap_div)
+            self.strain_legend[c].item.setImageItem(self.strain_imitem[c])
+            label_style = {'font-size': '14pt', 'color': 'white'}
+            axis = self.strain_legend[c].item.axis
+            axis.setLabel(self.component_labels[c], **label_style)
+            sig = self.strain_legend[c].item.region.sigRegionChanged
+            sig.connect(self.update_images)
+            # Create layout and add to app
+            self.strain_layout[c] = QtGui.QVBoxLayout()
+            self.strain_layout[c].addWidget(self.strain_view[c])
+            self.strain_layout[c].addWidget(self.strain_legend[c])
+            self.strain_widget[c] = pg.GraphicsView()
+            self.strain_widget[c].setLayout(self.strain_layout[c])
+            self.strain_fields_row.addWidget(self.strain_widget[c])
+
+        # link axes of strain field plots
+        link_views_xy(self.strain_vb['eyy'], self.strain_vb['exx'])
+        link_views_xy(self.strain_vb['exy'], self.strain_vb['exx'])
+
+        # Connect signals to slots for stress & stretch markers
+        sig = self.stress_vs_stretch.marker.sigDragged
+        sig.connect(self.on_stress_stretch_moved)
+        sig = self.stress_vs_time.marker.sigDragged
+        sig.connect(self.on_stress_time_moved)
+        sig = self.stretch_vs_time.marker.sigDragged
+        sig.connect(self.on_stretch_time_moved)
 
     def load_data(self, fpath):
         self.data = TestData(fpath)
@@ -138,8 +162,9 @@ class DataView(QtGui.QWidget):
         self.t = self.data.time[0]
         self.update_images()
         # Update color legends
-        lim = self.data.extrema['exx']
-        self.color_legend.item.setLimits((-lim, lim))
+        for c in self.components:
+            lim = self.data.extrema[c]
+            self.strain_legend[c].item.setLimits((-lim, lim))
         # Update markers
         self.stress_vs_stretch.marker.setPos(self.data.stretch[0])
         self.stress_vs_time.marker.setPos(self.data.time[0])
@@ -207,15 +232,16 @@ class DataView(QtGui.QWidget):
         # Strain fields
         if self.data.strainfields is not None:
             fields, fields_rgba, fieldtime = self.data.strainfields_at(self.t)
-            self.exx_imitem.setImage(fields_rgba['exx'])
-            img = render_strain(fields['eyy'],
-                                levels=self.color_legend.item.levels)
-            data = fields['eyy'].reshape(-1)
-            data = data[np.logical_not(np.isnan(data))]
-            h = np.histogram(data, bins=500)
-            self.color_legend.item.histogram.setData(h[0], h[1][:-1])
-            self.eyy_imitem.setImage(img)
-            self.exy_imitem.setImage(fields_rgba['exy'])
+            for c in self.components:
+                img = render_strain(fields[c],
+                    levels=self.strain_legend[c].item.levels)
+                self.strain_imitem[c].setImage(img)
+                # Update histogram
+                data = fields[c].reshape(-1)
+                data = data[np.logical_not(np.isnan(data))]
+                h = np.histogram(data, bins=500)
+                self.strain_legend[c].item.histogram.setData(h[0],
+                                                             h[1][:-1])
 
     def update_mechdata(self, time, stretch, stress):
         self.mechtime = np.array(time)
@@ -376,9 +402,6 @@ class ColorLegendItem(pg.GraphicsWidget):
         self.layout.addItem(self.colorbar, 0, 0)
         self.layout.addItem(self.vb, 1, 0)
         self.layout.addItem(self.axis, 2, 0)
-
-        label_style = {'font-size': '14pt', 'color': 'white'}
-        self.axis.setLabel('e<sub>xx</sub>', **label_style)
 
         # Signals
         self.region.sigRegionChanged.connect(self.regionChanging)
