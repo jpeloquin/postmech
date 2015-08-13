@@ -354,15 +354,14 @@ class ColorLegendItem(pg.GraphicsWidget):
         self.setLayout(self.layout)
 
         # Default parameters
-        self.limits = (0, 1)
+        self.limits = (-1, 1)
         self.levels = (self.limits[0], self.limits[1])
         self.image = None # Reference to linked ImageItem
 
         # Set up histogram and selector for range of colormap
         self.vb = pg.ViewBox(parent=self)
-        self.region = pg.LinearRegionItem([self.levels[0],
-                                           self.levels[1]],
-                                          pg.LinearRegionItem.Vertical)
+        self.region = SymmetricLinearRegionItem([self.levels[0],
+            self.levels[1]], pg.LinearRegionItem.Vertical)
         self.setLimits(self.limits)
 
         self.histogram = pg.PlotDataItem()
@@ -429,8 +428,19 @@ class ColorLegendItem(pg.GraphicsWidget):
         self.region.setBounds(self.limits)
 
     def regionChanging(self):
-        """Handle levels as they are being changed."""
+        """Handle levels as they are being changed.
+
+        The levels will change symmetrically about 0.
+
+        """
         self.levels = self.region.getRegion()
+        # Force levels to be symmetric about 0
+        # level = max(np.abs(self.levels))
+        # self.levels = (-level, level)
+        # self.region.blockLineSignal = True
+        # self.region.lines[0].setValue(self.levels[0])
+        # self.region.lines[1].setValue(self.levels[1])
+        # self.region.blockLineSignal = False
         self.update() # keeps lines from region boundaries to colorbar
                       # corners from smearing or leaving artifacts
 
@@ -492,3 +502,31 @@ class ColorBar(pg.GraphicsWidget):
         """
         self.gradient = self.getGradient()
         self.colorbar.setBrush(QtGui.QBrush(self.gradient))
+
+
+class SymmetricLinearRegionItem(pg.LinearRegionItem):
+    """A LinearRegion item that is symmetric about a value.
+
+    """
+    def __init__(self, *args, **kargs):
+        super(SymmetricLinearRegionItem, self).__init__()
+
+        # Separate low and high boundary lines
+        for l in self.lines:
+            l.sigPositionChanged.disconnect(self.lineMoved)
+        levels = [(l.value(), l) for l in self.lines]
+        self.line_min = min(levels)[1]
+        self.line_max = max(levels)[1]
+
+        self.line_min.sigPositionChanged.connect(self.lineMinMoved)
+        self.line_max.sigPositionChanged.connect(self.lineMaxMoved)
+
+    def lineMinMoved(self):
+        # Move line_max to match
+        self.line_max.setValue(-self.line_min.value())
+        self.lineMoved()
+
+    def lineMaxMoved(self):
+        # Move line_min to match
+        self.line_min.setValue(-self.line_max.value())
+        self.lineMoved()
