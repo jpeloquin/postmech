@@ -7,7 +7,7 @@ from PyQt4.QtCore import pyqtSlot, pyqtSignal, QObject
 import pyqtgraph as pg
 
 from datainput import TestData
-from render import cmap_div, cmap_div_lut
+from render import cmap_div, cmap_div_lut, render_strain
 
 def debug_trace():
     '''Set a tracepoint in the Python debugger that works with Qt'''
@@ -109,7 +109,9 @@ class DataView(QtGui.QWidget):
         # Add color legend
         self.color_legend = ColorLegendWidget()
         self.color_legend.setColormap(cmap_div)
+        self.color_legend.item.setImageItem(self.eyy_imitem)
         self.field_layout.addWidget(self.color_legend)
+        self.color_legend.item.region.sigRegionChanged.connect(self.update_images)
 
         # Connect signals to slots for marker
         self.stress_vs_stretch.marker.sigDragged.connect(self.on_stress_stretch_moved)
@@ -139,6 +141,9 @@ class DataView(QtGui.QWidget):
         # Update images
         self.t = self.data.time[0]
         self.update_images()
+        # Update color legends
+        lim = self.data.extrema['exx']
+        self.color_legend.item.setLimits((-lim, lim))
         # Update markers
         self.stress_vs_stretch.marker.setPos(self.data.stretch[0])
         self.stress_vs_time.marker.setPos(self.data.time[0])
@@ -207,7 +212,9 @@ class DataView(QtGui.QWidget):
         if self.data.strainfields is not None:
             fields, fields_rgba, fieldtime = self.data.strainfields_at(self.t)
             self.exx_imitem.setImage(fields['exx'])
-            self.eyy_imitem.setImage(fields_rgba['eyy'])
+            img = render_strain(fields['eyy'],
+                                levels=self.color_legend.item.levels)
+            self.eyy_imitem.setImage(img)
             self.exy_imitem.setImage(fields_rgba['exy'])
 
     def update_mechdata(self, time, stretch, stress):
@@ -343,20 +350,23 @@ class ColorLegendItem(pg.GraphicsWidget):
         self.setLayout(self.layout)
 
         # Default parameters
-        self.xmin = 0
-        self.xmax = 1
+        self.limits = (0, 1)
+        self.levels = (self.limits[0], self.limits[1])
+        self.image = None # Reference to linked ImageItem
 
         # Set up histogram and selector for range of colormap
         self.vb = pg.ViewBox(parent=self)
-        self.vb.setXRange(self.xmin, self.xmax)
-        self.region = pg.LinearRegionItem([self.xmin, self.xmax], pg.LinearRegionItem.Vertical)
-        self.region.setBounds([self.xmin, self.xmax])
+        self.region = pg.LinearRegionItem([self.levels[0],
+                                           self.levels[1]],
+                                          pg.LinearRegionItem.Vertical)
+        self.setLimits(self.limits)
         self.histogram = pg.PlotDataItem()
         self.vb.addItem(self.region)
         self.vb.addItem(self.histogram)
 
         self.axis = pg.AxisItem('bottom', linkView=self.vb, parent=self)
-        self.axis.setRange(0, 1) # Just to get axis on manual range mode
+        self.axis.setRange(*self.limits) # Just to get axis on manual
+                                         # range mode
         self.colorbar = ColorBar()
 
         self.layout.addItem(self.colorbar, 0, 0)
@@ -365,6 +375,19 @@ class ColorLegendItem(pg.GraphicsWidget):
 
         label_style = {'font-size': '14pt', 'color': 'white'}
         self.axis.setLabel('e<sub>xx</sub>', **label_style)
+
+        # Signals
+        self.region.sigRegionChanged.connect(self.regionChanging)
+        self.region.sigRegionChangeFinished.connect(self.regionChanged)
+
+    def imageChanged(self):
+        """Handle a change in image data.
+
+        """
+        if self.image is not None:
+            h = self.image.getHistogram()
+        else:
+            self.histogram.clear()
 
     def paint(self, p, *args):
         xlim = self.region.getRegion()
@@ -379,6 +402,33 @@ class ColorLegendItem(pg.GraphicsWidget):
     def setColormap(self, cmap):
         """Set the colormap."""
         self.colorbar.setColorMap(cmap)
+
+    def setImageItem(self, imitem):
+        """Link the color scale to an ImageItem.
+
+        The histogram in the ColorLegendItem will display data from
+        the linked ImageItem, disregarding NaNs.  The image will also
+        have its levels set according to the ColorLegendItem.
+
+        """
+        self.image = imitem
+        self.imageChanged()
+
+    def setLimits(self, limits):
+        """Set axis limits."""
+        self.limits = tuple(limits)
+        self.vb.setXRange(*self.limits)
+        self.region.setBounds(self.limits)
+
+    def regionChanging(self):
+        """Handle levels as they are being changed."""
+        self.levels = self.region.getRegion()
+        self.update() # keeps lines from region boundaries to colorbar
+                      # corners from smearing or leaving artifacts
+
+    def regionChanged(self):
+        """Handle new levels."""
+        pass
 
 
 class ColorBar(pg.GraphicsWidget):
