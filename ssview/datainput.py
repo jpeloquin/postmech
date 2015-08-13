@@ -30,10 +30,6 @@ class TestData(MechanicalTest):
                  for im in ims)
             self.extrema[c] = max(l)
 
-        # Render strainfields for quick display
-        self.strainfields_argb = [self._render_field_dict(fd, self.extrema)
-                                  for fd in self.strainfields]
-
     def _render_field_dict(self, fields, extrema):
         fields_rgba = dict()
         for k in fields:
@@ -49,5 +45,4 @@ class TestData(MechanicalTest):
         idx = np.argmin(np.abs(self.fieldtimes - t))
         fieldtime = self.fieldtimes[idx]
         fields = self.strainfields[idx]
-        fields_argb = self.strainfields_argb[idx]
-        return fields, fields_argb, fieldtime
+        return fields, fieldtime

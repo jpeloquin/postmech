@@ -231,7 +231,7 @@ class DataView(QtGui.QWidget):
             self.camera_plotitem.setTitle(mdata['name'])
         # Strain fields
         if self.data.strainfields is not None:
-            fields, fields_rgba, fieldtime = self.data.strainfields_at(self.t)
+            fields, fieldtime = self.data.strainfields_at(self.t)
             for c in self.components:
                 img = render_strain(fields[c],
                     levels=self.strain_legend[c].item.levels)
