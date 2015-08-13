@@ -16,6 +16,7 @@ def debug_trace():
     pyqtRemoveInputHook()
     set_trace()
 
+
 class MarkerPlotWidget(pg.PlotWidget):
     marker = None
 
@@ -26,6 +27,7 @@ class MarkerPlotWidget(pg.PlotWidget):
         self.marker.setZValue(1)
         self.addItem(self.marker)
         self.marker.hide()
+
 
 class DataView(QtGui.QWidget):
     """Qt widget for displaying plot time marker and video in sync.
@@ -269,6 +271,7 @@ class DataView(QtGui.QWidget):
         """
         return np.interp(time, self.mechtime, self.stretch)
 
+
 class ImageStack(QObject):
 
     # imlist : list of (time, image) tuples, where image is a numpy
@@ -324,6 +327,7 @@ class ColorLegendWidget(pg.GraphicsView):
 
     def setColormap(self, cmap):
         self.item.setColormap(cmap)
+
 
 class ColorLegendItem(pg.GraphicsWidget):
     """A Widget to show a color legend for an image.
