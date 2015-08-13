@@ -322,8 +322,6 @@ class ColorLegendWidget(pg.GraphicsView):
                                                 background=background)
         self.item = ColorLegendItem(*args, **kargs)
         self.setCentralItem(self.item)
-        # self.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Expanding)
-        # self.setMinimumHeight(95)
 
     def setColormap(self, cmap):
         self.item.setColormap(cmap)
@@ -359,7 +357,6 @@ class ColorLegendItem(pg.GraphicsWidget):
 
         self.axis = pg.AxisItem('bottom', linkView=self.vb, parent=self)
         self.axis.setRange(0, 1) # Just to get axis on manual range mode
-        #self.colorbar = ColorBar()
         self.colorbar = ColorBar()
 
         self.layout.addItem(self.colorbar, 0, 0)
@@ -404,11 +401,6 @@ class ColorBar(pg.GraphicsWidget):
 
         self.gradient = self.getGradient()
         self.colorbar.setBrush(QtGui.QBrush(self.gradient))
-
-        #self.translate(0, -self.h)
-        #self.sigGradientChanged.emit(self)
-
-        #self.setFixedHeight(self.h)
 
     def getGradient(self):
         """Return a QLinearGradientObject."""
