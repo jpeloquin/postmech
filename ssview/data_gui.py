@@ -106,6 +106,7 @@ class DataView(QtGui.QWidget):
         self.field_layout.addWidget(self.color_widget)
         # Add color legend
         self.color_legend = ColorLegendWidget()
+        self.color_legend.setColormap(cmap_div)
         self.field_layout.addWidget(self.color_legend)
 
         # Connect signals to slots for marker
@@ -321,6 +322,8 @@ class ColorLegendWidget(pg.GraphicsView):
         # self.setSizePolicy(QtGui.QSizePolicy.Preferred, QtGui.QSizePolicy.Expanding)
         # self.setMinimumHeight(95)
 
+    def setColormap(self, cmap):
+        self.item.setColormap(cmap)
 
 class ColorLegendItem(pg.GraphicsWidget):
     """A Widget to show a color legend for an image.
@@ -372,8 +375,9 @@ class ColorLegendItem(pg.GraphicsWidget):
         p.drawLine(p1, colorbar_rect.bottomLeft())
         p.drawLine(p2, colorbar_rect.bottomRight())
 
-    def setColorMap(self, cm):
-        pass
+    def setColormap(self, cmap):
+        """Set the colormap."""
+        self.colorbar.setColorMap(cmap)
 
 
 class ColorBar(pg.GraphicsWidget):
@@ -385,6 +389,10 @@ class ColorBar(pg.GraphicsWidget):
         # Default parameters
         self.w = 200
         self.h = 30
+        self.colormap = pg.ColorMap(pos=np.array([0, 1.0]),
+                                    color=np.array([[0.0, 0.0, 1.0, 1.0],
+                                                    [1.0, 0.0, 0.0, 1.0]]))
+
         self.setMaximumHeight(self.h)
         self.setMaximumWidth(16777215)
         self.colorbar = QtGui.QGraphicsRectItem(QtCore.QRectF(0, 0, self.w, self.h))
@@ -401,10 +409,9 @@ class ColorBar(pg.GraphicsWidget):
     def getGradient(self):
         """Return a QLinearGradientObject."""
         g = pg.QtGui.QLinearGradient(0.0, 0.0, self.w, self.h)
-        stops = np.array([0, 0.5, 1.0])
-        colors = np.array([[1.0, 1.0, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0], [1.0, 0.0, 0.0, 1.0]])
-        stops = [(a, pg.QtGui.QColor(*[255*c for c in b])) for a, b in zip(stops, colors)]
-        g.setStops(stops)
+        pos, color = self.colormap.getStops(pg.ColorMap.BYTE)
+        color = [QtGui.QColor(*x) for x in color]
+        g.setStops(zip(pos, color))
         return g
 
     def resizeEvent(self, ev):
@@ -412,6 +419,13 @@ class ColorBar(pg.GraphicsWidget):
         self.w = self.width()
         # self.width is from pg.GraphicsWidget
         self.colorbar.setRect(0.0, 0.0, self.w, self.h)
+        self.updateGradient()
+
+    def setColorMap(self, cmap):
+        """Recreate the gradient with a new color map.
+
+        """
+        self.colormap = cmap
         self.updateGradient()
 
     def updateGradient(self):
