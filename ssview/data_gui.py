@@ -214,6 +214,10 @@ class DataView(QtGui.QWidget):
             self.exx_imitem.setImage(fields['exx'])
             img = render_strain(fields['eyy'],
                                 levels=self.color_legend.item.levels)
+            data = fields['eyy'].reshape(-1)
+            data = data[np.logical_not(np.isnan(data))]
+            h = np.histogram(data, bins=500)
+            self.color_legend.item.histogram.setData(h[0], h[1][:-1])
             self.eyy_imitem.setImage(img)
             self.exy_imitem.setImage(fields_rgba['exy'])
 
@@ -360,7 +364,12 @@ class ColorLegendItem(pg.GraphicsWidget):
                                            self.levels[1]],
                                           pg.LinearRegionItem.Vertical)
         self.setLimits(self.limits)
+
         self.histogram = pg.PlotDataItem()
+        self.histogram.rotate(90)
+        self.histogram.setFillLevel(0.0)
+        self.histogram.setFillBrush((100, 100, 200))
+
         self.vb.addItem(self.region)
         self.vb.addItem(self.histogram)
 
@@ -384,9 +393,7 @@ class ColorLegendItem(pg.GraphicsWidget):
         """Handle a change in image data.
 
         """
-        if self.image is not None:
-            h = self.image.getHistogram()
-        else:
+        if self.image is None:
             self.histogram.clear()
 
     def paint(self, p, *args):
@@ -412,6 +419,7 @@ class ColorLegendItem(pg.GraphicsWidget):
 
         """
         self.image = imitem
+        self.image.sigImageChanged.connect(self.imageChanged)
         self.imageChanged()
 
     def setLimits(self, limits):
