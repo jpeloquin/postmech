@@ -124,7 +124,7 @@ class DataView(QtGui.QWidget):
             self.strain_layout[c].addWidget(self.strain_legend[c])
             self.strain_widget[c] = pg.GraphicsView()
             self.strain_widget[c].setLayout(self.strain_layout[c])
-            self.strain_fields_row.addWidget(self.strain_widget[c])
+            self.strain_fields.layout().addWidget(self.strain_widget[c])
 
         # link axes of strain field plots
         link_views_xy(self.strain_vb['eyy'], self.strain_vb['exx'])
