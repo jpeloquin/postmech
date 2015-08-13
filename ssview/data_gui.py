@@ -9,6 +9,9 @@ import pyqtgraph as pg
 from datainput import TestData
 from render import cmap_div, cmap_div_lut, render_strain
 
+pg.setConfigOptions(foreground='w')
+tick_font = QtGui.QFont().setPointSize(11)
+
 def debug_trace():
     '''Set a tracepoint in the Python debugger that works with Qt'''
     from PyQt4.QtCore import pyqtRemoveInputHook
@@ -36,6 +39,9 @@ class MarkerPlotWidget(pg.PlotWidget):
         self.marker.setZValue(1)
         self.addItem(self.marker)
         self.marker.hide()
+
+        for ax in self.plotItem.axes.iteritems():
+            ax[1]['item'].setTickFont(tick_font)
 
 
 class DataView(QtGui.QWidget):
@@ -67,17 +73,26 @@ class DataView(QtGui.QWidget):
         super(DataView, self).__init__(parent)
         codedir = os.path.dirname(os.path.abspath(__file__))
         uic.loadUi(os.path.join(codedir, 'DataView.ui'), self)
+
+        # Default settings
+        self.label_style = {'font-size': '14pt', 'color': 'white'}
+
+
         # Store references to other objects
         self.parent_window = parent_window
         # Format line plots
-        self.stretch_vs_time.setLabel('left', text='Stretch Ratio')
-        self.stretch_vs_time.setLabel('bottom', text='Time',
-                                      units='s')
-        self.stress_vs_time.setLabel('left', text='Stress', units='Pa')
-        self.stress_vs_time.setLabel('bottom', text='Time', units='s')
-        self.stress_vs_stretch.setLabel('left',text='Stress',
-                                        units='Pa')
-        self.stress_vs_stretch.setLabel('bottom', text='Stretch Ratio')
+        self.stretch_vs_time.setLabel('left', text='Stretch Ratio',
+                                      **self.label_style)
+        self.stretch_vs_time.setLabel('bottom', text='Time', units='s',
+                                      **self.label_style)
+        self.stress_vs_time.setLabel('left', text='Stress', units='Pa',
+                                     **self.label_style)
+        self.stress_vs_time.setLabel('bottom', text='Time', units='s',
+                                     **self.label_style)
+        self.stress_vs_stretch.setLabel('left',text='Stress', units='Pa',
+                                        **self.label_style)
+        self.stress_vs_stretch.setLabel('bottom', text='Stretch Ratio',
+                                        **self.label_style)
         # Link time axes
         self.stretch_vs_time.setXLink(self.stress_vs_time)
 
@@ -109,15 +124,24 @@ class DataView(QtGui.QWidget):
             self.strain_vb[c] = vb
             self.strain_imitem[c] = imitem
             self.strain_view[c].setCentralItem(vb)
+
             # Add color legend
             self.strain_legend[c] = ColorLegendWidget()
             self.strain_legend[c].setColormap(cmap_div)
             self.strain_legend[c].item.setImageItem(self.strain_imitem[c])
-            label_style = {'font-size': '14pt', 'color': 'white'}
+            # Set axis label
             axis = self.strain_legend[c].item.axis
-            axis.setLabel(self.component_labels[c], **label_style)
+            # e_xx, e_yy_, etc. look small, so we'll give these labels
+            # a bigger font size
+            s = {'font-size': '16pt', 'color': 'white'}
+            axis.setLabel(self.component_labels[c], **s)
+            # Set tick label style
+            axis.setTickFont(tick_font)
+            axis.setStyle(tickTextOffset=4)
+            # Connect signal to update image when levels are changed
             sig = self.strain_legend[c].item.region.sigRegionChanged
             sig.connect(self.update_images)
+
             # Create layout and add to app
             self.strain_layout[c] = QtGui.QVBoxLayout()
             self.strain_layout[c].addWidget(self.strain_view[c])
@@ -228,7 +252,8 @@ class DataView(QtGui.QWidget):
         if self.data.imagepaths is not None:
             image, mdata = self.data.image_at(self.t)
             self.camera_imitem.updateImage(image)
-            self.camera_plotitem.setTitle(mdata['name'])
+            self.camera_plotitem.setTitle(mdata['name'],
+                                          size=self.label_style['font-size'])
         # Strain fields
         if self.data.strainfields is not None:
             fields, fieldtime = self.data.strainfields_at(self.t)
@@ -248,9 +273,7 @@ class DataView(QtGui.QWidget):
         self.stretch = np.array(stretch)
         self.stress = np.array(stress)
 
-        # labelStyle = {'font-size': '14px'}
-        self.ssplot.setLabel('left', text='Stress',
-                             units='Pa')
+        self.ssplot.setLabel('left', text='Stress', units='Pa')
         self.ssplot.setLabel('bottom', text='Stretch Ratio')
 
     def handle_data_changed(self):
