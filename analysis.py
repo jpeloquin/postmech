@@ -245,7 +245,8 @@ def key_stress_pts(fpath, imdir=None):
     for k in out:
         imindex[k] = out[k]
     with open(fpath, 'wb') as f:
-        csvwriter = csv.writer(f, quoting=csv.QUOTE_NONNUMERIC)
+        csvwriter = csv.writer(f, quoting=csv.QUOTE_NONNUMERIC,
+                               lineterminator=os.linesep)
         for k in imindex:
             v = imindex[k]
             if v is None:
