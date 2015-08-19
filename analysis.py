@@ -62,7 +62,11 @@ class MechanicalTest(object):
             self.imagenames = [os.path.basename(f) for f in imagelist]
             imagetimes = [mechana.images.image_time(nm)
                           for nm in self.imagenames]
-            self.image_t0 = imagetimes[0]
+            # Guess at image index path
+            imindex = mechana.images.read_image_index(os.path.join(datadir, 'images', 'image_index.csv'))
+            reftime = mechana.read.measurement_csv(os.path.join(datadir, 'images', 'ref_time.csv'))
+            reftime = reftime.nominal_value
+            self.image_t0 = mechana.images.image_time(imindex['ref_time']) - reftime
             self.imagetimes = np.array(imagetimes) - self.image_t0
             # Image lookup table
             imageids = [mechana.images.image_id(f)
@@ -202,7 +206,7 @@ def key_stress_pts(fpath, imdir=None):
         reftime = float(reader.next()[0])
     d = imtime0 - reftime
     imtimes = [mechana.images.image_time(nm) - d
-                  for nm in imlist]
+               for nm in imlist]
 
     # Allocate output
     out = {}
