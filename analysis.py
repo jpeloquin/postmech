@@ -109,6 +109,15 @@ class MechanicalTest(object):
         """
         return np.interp(t, self.time, self.stretch)
 
+    def time_from_imtime(self, t):
+        """Return mechanical time from image time stamp.
+
+        The time from the mechanical data record is used as the
+        standard.
+
+        """
+        return t - self.image_t0
+
     def image_at(self, t):
         """Return frame (and metadata) at time t.
 
