@@ -172,23 +172,30 @@ def label_unit(text):
     """
     pass
 
-def stress_crossing(tab, thresh, direction='left'):
-    """Find stress-strain point crossing a stress threshold.
+def first_crossing(v, threshold, direction='left'):
+    """Find point in vector that crosses a threshold.
+
+    direction : 'left' or 'right'
+        The direction in which the search moves.  'right' means start
+        with the first timepoint and search by increasing timepoints;
+        'left' means start with the last timepoint and search by
+        decreasing timepoints.
 
     """
-    # find index of first stress value, from right, that exceeds
-    # the threshold
-    if tab['Stress (Pa)'].iget(-1) > thresh:
-        # Last stress value already exceeds threshold
+    sign_from_dir = {'left': -1,
+                     'right': 1}
+    direction = sign_from_dir[direction]
+    if direction == -1 and v[-1] > threshold:
+        # Last point already exceeds threshold
+        idx = None
+    elif direction == 1 and v[0] > threshold:
+        # First point already exceeds threshold
         idx = None
     else:
-        sign_from_dir = {'left': -1,
-                         'right': 1}
-        idx = next(i for i in tab.index[::sign_from_dir[direction]]
-                   if tab['Stress (Pa)'][i] > thresh)
-
+        idx = next(i for i, x in zip(np.arange(len(v))[::direction],
+                                     v[::direction])
+                   if x > threshold)
     return idx
-
 
 def key_stress_pts(fpath, imdir=None):
     """Find image frames corresponding to key stress values.
@@ -236,7 +243,9 @@ def key_stress_pts(fpath, imdir=None):
     for f in resfrac:
         key = '{}% residual strength'.format(int(round(f * 100)))
 
-        idx = stress_crossing(df, thresh = f * peak_stress)
+        idx = first_crossing(df['Stress (Pa)'].values,
+                             threshold=f * peak_stress,
+                             direction='left')
         idx_res.append(idx)
 
         # find index of corresponding image (nearest following time)
