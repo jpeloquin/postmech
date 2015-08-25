@@ -316,6 +316,20 @@ def tabulate_stress_strain(spcdir, data, areapath, lengthpath,
 
     return data
 
+def xlim_strain(sstable):
+    """Return useful axis limits for strain.
+
+    """
+    x0 = sstable['Stretch Ratio'].min()
+    thresh = 0.01 * sstable['Stress (Pa)'].max()
+    if sstable['Stress (Pa)'].iget(-1) > thresh:
+        x1 = sstable['Stretch Ratio'].max()
+    else:
+        idx = next(i for i in sstable.index[::-1]
+                   if sstable['Stress (Pa)'][i] > thresh)
+        x1 = sstable['Stretch Ratio'][idx]
+    return (x0, x1)
+
 def plot_stress_strain(sstable):
     """Plot stress vs. strain for a tensile test.
 
@@ -332,15 +346,8 @@ def plot_stress_strain(sstable):
     ax.set_ylabel("Stress (MPa)")
 
     # Set x axis limits
-    x0 = sstable['Stretch Ratio'].min()
-    thresh = 0.01 * sstable['Stress (Pa)'].max()
-    if sstable['Stress (Pa)'].iget(-1) > thresh:
-        x1 = sstable['Stretch Ratio'].max()
-    else:
-        idx = next(i for i in sstable.index[::-1]
-                   if sstable['Stress (Pa)'][i] > thresh)
-        x1 = sstable['Stretch Ratio'][idx]
-    ax.set_xlim(x0, x1)
+    xlim = xlim_strain(sstable)
+    ax.set_xlim(*xlim)
 
     # Re-layout figure
     fig.tight_layout()
