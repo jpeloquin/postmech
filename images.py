@@ -102,7 +102,7 @@ def image_time(imname):
     `cam#_index_timeinseconds.tiff`
 
     """
-    pattern = r"(?<=cam0_)([0-9]+)_([0-9]+\.?[0-9]+)(\.[A-Za-z]+)"
+    pattern = r"(?<=cam0_)([0-9]+)_([0-9]+\.?[0-9]+)(\.[A-Za-z]+)?"
     timecode = re.search(pattern, imname).group(2)
     return float(timecode)
 
