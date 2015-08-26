@@ -17,8 +17,8 @@ class TestData(MechanicalTest):
     """Test data (mechanical data, images, strain fields).
 
     """
-    def __init__(self, *args):
-        super(TestData, self).__init__(*args)
+    def __init__(self, *args, **kargs):
+        super(TestData, self).__init__(*args, **kargs)
 
         # Get overall quantiles for each strain field
         components = ['exx', 'eyy', 'exy']

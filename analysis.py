@@ -36,57 +36,39 @@ class MechanicalTest(object):
     # strainfields_argb = None # list of rgba images
     # fieldtimes = None
 
-    def __init__(self, jsonfile):
+    def __init__(self, ssfile=None, imagelist=None, dir_vic2d=None):
         """Read test data from a test file.
 
         """
-        datadir = os.path.dirname(jsonfile)
-        with open(jsonfile, 'rb') as f:
-            testdesc = json.load(f)
         # Read stress and strain
-        ssfile = os.path.join(datadir, testdesc['stress_strain_file'])
         if ssfile is not None:
             data = pd.read_csv(ssfile)
             self.stress = data['Stress (Pa)'].values
             self.stretch = data['Stretch Ratio'].values
             self.time = data['Time (s)'].values
         # Read images
-        imagelist = testdesc['images']
-        if imagelist is not None:
-            # Image list
-            # Make the paths relative to the json file
-            imagelist = [os.path.join(datadir, fp)
-                         for fp in testdesc['images']]
-            self.imagepaths = imagelist
+        self.imagepaths = imagelist
+        if self.imagepaths is not None:
             # Image times
             self.imagenames = [os.path.basename(f) for f in imagelist]
             imagetimes = [mechana.images.image_time(nm)
                           for nm in self.imagenames]
             # Guess at image index path
-            imindex = mechana.images.read_image_index(os.path.join(datadir, 'images', 'image_index.csv'))
-            reftime = mechana.read.measurement_csv(os.path.join(datadir, 'images', 'ref_time.csv'))
+            imdir = os.path.dirname(self.imagepaths[0])
+            imindex = mechana.images.read_image_index(os.path.join(imdir, 'image_index.csv'))
+            reftime = mechana.read.measurement_csv(os.path.join(imdir, 'ref_time.csv'))
             reftime = reftime.nominal_value
             self.image_t0 = mechana.images.image_time(imindex['ref_time']) - reftime
             self.imagetimes = np.array(imagetimes) - self.image_t0
             # Image lookup table
             imageids = [mechana.images.image_id(f)
-                        for f in imagelist]
-            self.imagedict = dict(zip(imageids, imagelist))
-        else:
-            self.imagepaths = None
-        # Read strain fields
-        vic2dfolder = testdesc['vic2d_folder']
-        if vic2dfolder is not None:
-            # make vic2d folder relative to json file
-            vic2dfolder = os.path.join(datadir, vic2dfolder)
-            if self.image_t0 is None:
-                raise Exception("Cannot match Vic-2D times "
-                                "to mechanical test data "
-                                "without an offset defined "
-                                "for the image time codes.")
+                        for f in self.imagepaths]
+            self.imagedict = dict(zip(imageids, self.imagepaths))
 
+        # Read strain fields
+        if dir_vic2d is not None:
             # Read strain components from Vic-2D csv files
-            vic2dfiles = mechana.vic2d.listcsvs(vic2dfolder)
+            vic2dfiles = mechana.vic2d.listcsvs(dir_vic2d)
 
             ncpu = multiprocessing.cpu_count()
             p = multiprocessing.Pool(ncpu)
@@ -97,7 +79,30 @@ class MechanicalTest(object):
                           for nm in csvnames]
             self.fieldtimes = np.array(fieldtimes) - self.image_t0
 
+    @classmethod
+    def from_json(cls, pth_json):
+        """Initialize from a json test record.
+
+        The record format is the same as that output by
+        mechana.organize.write_test_file.
+
+        """
+        datadir = os.path.dirname(pth_json)
+        with open(pth_json, 'rb') as f:
+            testdesc = json.load(f)
+        pth_ss = os.path.join(datadir, testdesc['stress_strain_file'])
+        imagelist = testdesc['images']
+        # Make the paths absolute (they are relative to the json file
+        # location)
+        imagelist = [os.path.join(datadir, fp)
+                     for fp in testdesc['images']]
+        vic2dfolder = os.path.join(datadir, testdesc['vic2d_folder'])
+        self = cls(ssfile=pth_ss, imagelist=imagelist,
+                   dir_vic2d=vic2dfolder)
+        return self
+
     def stress_at(self, t):
+
         """Return stress at time t.
 
         """

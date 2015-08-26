@@ -108,7 +108,7 @@ class DataView(QtGui.QWidget):
         self.stretch_vs_time.marker.sigDragged.connect(self.on_stretch_time_moved)
 
     def load_data(self, fpath):
-        self.data = TestData(fpath)
+        self.data = TestData.from_json(fpath)
         # Change title bar of main window
         if self.parent_window is not None:
             s = os.path.relpath(fpath,
