@@ -410,7 +410,10 @@ class ColorLegendItem(pg.GraphicsWidget):
         self.setLimits(self.limits)
 
         self.histogram = pg.PlotDataItem()
-        self.histogram.rotate(90)
+        # Both rotation and inversion are necessary to make the
+        # histogram line up with self.axis
+        self.histogram.rotate(-90)
+        self.vb.invertY(True)
         self.histogram.setFillLevel(0.0)
         self.histogram.setFillBrush((100, 100, 200))
 
