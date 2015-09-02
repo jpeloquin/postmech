@@ -468,6 +468,8 @@ class ColorLegendItem(pg.GraphicsWidget):
         self.limits = tuple(limits)
         self.vb.setXRange(*self.limits)
         self.region.setBounds(self.limits)
+        self.region.line_min.setValue(self.limits[0])
+        self.region.line_max.setValue(self.limits[1])
 
     def regionChanging(self):
         """Handle levels as they are being changed.
