@@ -72,7 +72,10 @@ class MechanicalTest(object):
 
             ncpu = multiprocessing.cpu_count()
             p = multiprocessing.Pool(ncpu)
-            self.strainfields = p.map(read_strain_components, vic2dfiles)
+            self.strainfields = p.map(read_strain_components,
+                                      vic2dfiles)
+            p.close()
+            p.join()
 
             csvnames = (os.path.basename(f) for f in vic2dfiles)
             fieldtimes = [mechana.images.image_time(nm)
