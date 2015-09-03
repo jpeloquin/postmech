@@ -14,6 +14,7 @@ $ choose_images IMAGE_INDEX.CSV
 import os, re, sys, csv
 
 import numpy as np
+import pandas as pd
 
 from uncertainties import ufloat
 
@@ -41,7 +42,7 @@ def decode_impath(pth):
     m = re.search(pattern, s)
     d = {'camera id': m.group('cam_id'),
          'frame id': m.group('frame_id'),
-         'timestamp': float(m.group('time'))}
+         'timestamp (s)': float(m.group('time'))}
     return d
 
 def image_id(fpath):
@@ -53,41 +54,36 @@ def image_id(fpath):
     m = re.search(pattern, s)
     return m.group('key')
 
-def image_strain(imdir, mechcsv):
-    """Returns a list of (image name, strain) tuples.
+def frame_stats(imdir, mech_data=None):
+    """Return a table with data mapped to each image frame.
 
-    The image names omit the file extension.
-
-    The strain is based on Instron extension; not optical strain.
+    mech_table := Path to mechanical data table.  This can be a raw
+    data file or a file with stress and strain; it just needs to have
+    a 'Time (s)' column that can be matched with the image timestamps.
+    =ref_time.csv= and =image_index.csv= (both in the image directory)
+    will be used to match this time to the frame timestamps.
 
     """
-    # Load image data
-    imnames = [fname for fname in os.listdir(imdir)
-               if (fname.endswith((".tiff", ".tif"))
-                   and not os.path.splitext(fname)[0].endswith('ruler'))]
-    imnames.sort()
-    imdict = read_image_index(os.path.join(imdir, 'image_index.csv'))
-    reftime = image_time(imdict["ref_time"])
-    imtimes = [image_time(n) - reftime for n in imnames]
-    scale = image_scale(os.path.join(imdir, 'image_scale.csv'))
+    ## Load image data
+    image_list = list_images(imdir)
+    imindex = read_image_index(os.path.join(imdir, 'image_index.csv'))
+    tab_frames = pd.DataFrame(map(decode_impath, image_list))
+    tab_frames = tab_frames.set_index(['camera id', 'frame id'])
 
-    # Calculate reference length
-    l0 = from_px(os.path.join(imdir, 'ref_length.csv'), scale)
+    ## Compute frame times from the perspective of the test clock
+    t_frame0 = mechana.read.measurement_csv(os.path.join(imdir, 'ref_time.csv'))
+    t_frame0 = t_frame0.nominal_value
+    timestamp0 = image_time(imindex["ref_time"])
 
-    # Load mechanical test data
-    df = mechana.read.instron_data(mechcsv)
-    fp = os.path.join(imdir, "ref_time.csv")
-    mech_reftime = mechana.read.measurement_csv(fp)
-    t = df['Time (s)'] - mech_reftime.to('s').value.magnitude
+    t = tab_frames['timestamp (s)'] - timestamp0 + t_frame0
+    tab_frames['time (s)'] = t
 
-    # Calculate stretch
-    l0_m = l0.to('m').value.magnitude
-    y = (df['Position (m)'].values + l0_m) / l0_m
+    if mech_data is not None:
+        for col in set(mech_data.columns) - set(["Time (s)"]):
+            tab_frames[col] = np.interp(tab_frames['time (s)'],
+                                        mech_data['Time (s)'], mech_data[col])
 
-    # Interpolate stretch at image times
-    y_im = np.interp(imtimes, t, y)
-
-    return zip(imnames, y_im)
+    return tab_frames
 
 def image_scale(fpath):
     """Reads `image_scale.csv` and calculates mm/px"""
@@ -217,7 +213,7 @@ def move_extra(fpath):
             os.rename(os.path.join(imdir, fname),
                       os.path.join(undir, fname))
 
-def make_vic2d_lists(fp, mechcsv, interval=0.01, highres=None,
+def make_vic2d_lists(fp, mech_data, interval=0.01, highres=None,
                      fout='vic2d_list.txt',
                      zero_strain='zero_strain',
                      start='vic2d_start',
@@ -241,11 +237,12 @@ def make_vic2d_lists(fp, mechcsv, interval=0.01, highres=None,
     # Calculate paths
     fp_imindex = os.path.abspath(fp)
     imdir = os.path.dirname(fp_imindex)
-    fp_ss = os.path.abspath(mechcsv)
 
     imindex = read_image_index(fp_imindex)
     imlist = mechana.images.list_images(imdir)
-    imnames, stretch = zip(*image_strain(imdir, mechcsv))
+    imlist = [os.path.relpath(f, imdir) for f in imlist]
+
+    tab_frames = frame_stats(imdir, mech_data)
 
     selected_images = [imindex[zero_strain]]
 
@@ -254,11 +251,11 @@ def make_vic2d_lists(fp, mechcsv, interval=0.01, highres=None,
     imname_start = imindex[start]
     imname_end = imindex[end]
 
-    y_start = stretch[imnames.index(imname_start)]
-    y_end = stretch[imnames.index(imname_end)]
+    y_start = tab_frames['Stretch Ratio'][imlist.index(imname_start)]
+    y_end = tab_frames['Stretch Ratio'][imlist.index(imname_end)]
     yt = 0
-    for i, y in enumerate(stretch):
-        t = image_time(imnames[i])
+    for i, y in enumerate(tab_frames['Stretch Ratio']):
+        t = image_time(imlist[i])
         if highres is not None:
             inhighres = (y >= highres[0] and y <= highres[1])
         else:
@@ -266,7 +263,7 @@ def make_vic2d_lists(fp, mechcsv, interval=0.01, highres=None,
         if (t >= t_start and t <= t_end
             and (y - yt > interval or inhighres)):
             yt = y
-            selected_images.append(imnames[i])
+            selected_images.append(imlist[i])
 
     # Write image list
     with open(fout, 'w') as f:

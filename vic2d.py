@@ -13,7 +13,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import mechana
-from mechana.images import image_id, image_strain
+from mechana.images import image_id
 
 # Register diverging colormap
 
@@ -178,6 +178,7 @@ def hdf5ify(fdir, h5path=None):
                     print ('Error reading file: ' + fp)
                     raise
 
+### Not used anymore
 def summarize_vic2d(vicdir, imdir):
     """Calculate summary statistics for Vic-2D data.
 
@@ -185,9 +186,9 @@ def summarize_vic2d(vicdir, imdir):
     you will find many, many zeros in the data.
 
     """
-    with open(path.join(imdir, 'mechdata_path.txt')) as f:
-        mechpath = path.join(imdir, (f.read().strip()))
-    imstrain = dict(image_strain(imdir, mechpath))
+    pth = path.join(imdir, '..', 'stress_strain.csv')
+    tab_mech = pd.read_csv(pth)
+    imstrain = dict(frame_stats(imdir, tab_mech))
     fields = ['exx', 'eyy', 'exy']
     # Initialize output
     q05 = {k: [] for k in fields}
