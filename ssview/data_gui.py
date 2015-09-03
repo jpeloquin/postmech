@@ -187,8 +187,9 @@ class DataView(QtGui.QWidget):
         self.update_images()
         # Update color legends
         for c in self.components:
-            lim = self.data.extrema[c]
-            self.strain_legend[c].item.setLimits((-lim, lim))
+            if self.data.extrema[c] is not None:
+                lim = self.data.extrema[c]
+                self.strain_legend[c].item.setLimits((-lim, lim))
         # Update markers
         self.stress_vs_stretch.marker.setPos(self.data.stretch[0])
         self.stress_vs_time.marker.setPos(self.data.time[0])

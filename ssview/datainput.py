@@ -20,15 +20,19 @@ class TestData(MechanicalTest):
     def __init__(self, *args, **kargs):
         super(TestData, self).__init__(*args, **kargs)
 
+        # Defaults
+        self.extrema = {'exx': None,
+                        'eyy': None,
+                        'exy': None}
+
         # Get overall quantiles for each strain field
-        components = ['exx', 'eyy', 'exy']
-        self.extrema = {}
-        for c in components:
-            ims = (fd[c] for fd in self.strainfields)
-            ims = (im[~np.isnan(im)] for im in ims)
-            l = (max(np.abs(np.percentile(im, (5, 95))))
-                 for im in ims)
-            self.extrema[c] = max(l)
+        if self.strainfields is not None:
+            for c in self.extrema:
+                ims = (fd[c] for fd in self.strainfields)
+                ims = (im[~np.isnan(im)] for im in ims)
+                l = (max(np.abs(np.percentile(im, (5, 95))))
+                     for im in ims)
+                self.extrema[c] = max(l)
 
     def _render_field_dict(self, fields, extrema):
         fields_rgba = dict()

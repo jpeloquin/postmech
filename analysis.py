@@ -40,6 +40,9 @@ class MechanicalTest(object):
         """Read test data from a test file.
 
         """
+        ## Defaults
+        self.strainfields = None
+
         # Read stress and strain
         if ssfile is not None:
             data = pd.read_csv(ssfile)
@@ -99,7 +102,12 @@ class MechanicalTest(object):
         # location)
         imagelist = [os.path.join(datadir, fp)
                      for fp in testdesc['images']]
-        vic2dfolder = os.path.join(datadir, testdesc['vic2d_folder'])
+        # Vic-2D folder
+        vic2dfolder=None
+        if not pd.isnull(testdesc['vic2d_folder']):
+            vic2dfolder = os.path.join(datadir,
+                                    testdesc['vic2d_folder'])
+        ## Create object
         self = cls(ssfile=pth_ss, imagelist=imagelist,
                    dir_vic2d=vic2dfolder)
         return self
