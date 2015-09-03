@@ -21,6 +21,29 @@ import mechana
 from mechana import instron
 from mechana.unit import ureg
 
+def decode_impath(pth):
+    """Return camera number, frame number, & timestamp from image path.
+
+    The format of the image file name is:
+
+        cam{camera id}_{frame id}_{time}.{extension}
+
+    The camera id and frame id are integers.  The time is a decimal
+    value (include the decimal point) enumerated in seconds.  The
+    extension is tiff, tif, or csv (for vic-2d exports).
+
+    """
+    s = os.path.basename(pth)
+    pattern = "".join([r'cam(?P<cam_id>[0-9]+)_',
+                       r'(?P<frame_id>[0-9]+)_'
+                       r'(?P<time>[0-9]+.[0-9]+)',
+                       r'(?:.tiff|.csv|.tif)?'])
+    m = re.search(pattern, s)
+    d = {'camera id': m.group('cam_id'),
+         'frame id': m.group('frame_id'),
+         'timestamp': float(m.group('time'))}
+    return d
+
 def image_id(fpath):
     """Convert image name into a unique id.
 
