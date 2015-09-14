@@ -54,21 +54,26 @@ def image_id(fpath):
     m = re.search(pattern, s)
     return m.group('key')
 
-def frame_stats(imdir, mech_data=None):
+def tabulate_images(imdir, mech_data_file=None, vic2d_dir=None):
     """Return a table with data mapped to each image frame.
 
-    mech_table := Path to mechanical data table.  This can be a raw
-    data file or a file with stress and strain; it just needs to have
-    a 'Time (s)' column that can be matched with the image timestamps.
-    =ref_time.csv= and =image_index.csv= (both in the image directory)
-    will be used to match this time to the frame timestamps.
+    mech_data_file := Path to mechanical data table.  This can be a
+    raw data file or a file with stress and strain; it just needs to
+    have a 'Time (s)' column that can be matched with the image
+    timestamps.  =ref_time.csv= and =image_index.csv= (both in the
+    image directory) will be used to match this time to the frame
+    timestamps.
+
+    The returned table contains: camera number, frame number,
+    timestamp (based on the camera), stress and strain corresponding
+    to that frame (based on the ref_time.csv mediated synchronication
+    with the Instron data), and path to the vic-2d data files.
 
     """
     ## Load image data
     image_list = list_images(imdir)
     imindex = read_image_index(os.path.join(imdir, 'image_index.csv'))
     tab_frames = pd.DataFrame(map(decode_impath, image_list))
-    tab_frames = tab_frames.set_index(['camera id', 'frame id'])
 
     ## Compute frame times from the perspective of the test clock
     t_frame0 = mechana.read.measurement_csv(os.path.join(imdir, 'ref_time.csv'))
@@ -78,10 +83,25 @@ def frame_stats(imdir, mech_data=None):
     t = tab_frames['timestamp (s)'] - timestamp0 + t_frame0
     tab_frames['time (s)'] = t
 
-    if mech_data is not None:
+    ## Add corresponding stress & strain values
+    if mech_data_file is not None:
+        mech_data = pd.read_csv(mech_data_file)
         for col in set(mech_data.columns) - set(["Time (s)"]):
             tab_frames[col] = np.interp(tab_frames['time (s)'],
-                                        mech_data['Time (s)'], mech_data[col])
+                                        mech_data['Time (s)'],
+                                        mech_data[col])
+        tab_frames.columns = [s.lower() for s in tab_frames.columns]
+
+    ## Add paths to vic-2d files
+    if vic2d_dir is not None:
+        vic2d_files = os.listdir(vic2d_dir)
+        tab_v2d = pd.DataFrame(map(decode_impath, vic2d_files))
+        pths = [os.path.relpath(os.path.join(vic2d_dir, p))
+                for p in vic2d_files]
+        tab_v2d['vic-2d file'] = pths
+        tab_v2d = tab_v2d.drop('timestamp (s)', 1)
+        tab_frames = pd.merge(tab_frames, tab_v2d, how='left',
+                              on=['camera id', 'frame id'])
 
     return tab_frames
 

@@ -17,6 +17,7 @@ import matplotlib.pyplot as plt
 
 import mechana
 from mechana.unit import ureg
+from .images import decode_impath
 from mechana.vic2d import read_strain_components
 
 class MechanicalTest(object):
@@ -52,17 +53,11 @@ class MechanicalTest(object):
         # Read images
         self.imagepaths = imagelist
         if self.imagepaths is not None:
-            # Image times
-            self.imagenames = [os.path.basename(f) for f in imagelist]
-            imagetimes = [mechana.images.image_time(nm)
-                          for nm in self.imagenames]
-            # Guess at image index path
             imdir = os.path.dirname(self.imagepaths[0])
-            imindex = mechana.images.read_image_index(os.path.join(imdir, 'image_index.csv'))
-            reftime = mechana.read.measurement_csv(os.path.join(imdir, 'ref_time.csv'))
-            reftime = reftime.nominal_value
-            self.image_t0 = mechana.images.image_time(imindex['ref_time']) - reftime
-            self.imagetimes = np.array(imagetimes) - self.image_t0
+            self.tab_images = mechana.images.tabulate_images(imdir,
+                vic2d_dir=dir_vic2d)
+            # Image times
+            self.imagetimes = self.tab_images['time (s)']
             # Image lookup table
             imageids = [mechana.images.image_id(f)
                         for f in self.imagepaths]
@@ -83,6 +78,8 @@ class MechanicalTest(object):
             csvnames = (os.path.basename(f) for f in vic2dfiles)
             fieldtimes = [mechana.images.image_time(nm)
                           for nm in csvnames]
+            self.image_t0 = self.tab_images.iloc[0]['timestamp (s)'] - \
+                            self.tab_images.iloc[0]['time (s)']
             self.fieldtimes = np.array(fieldtimes) - self.image_t0
 
     @classmethod
@@ -125,23 +122,17 @@ class MechanicalTest(object):
         """
         return np.interp(t, self.time, self.stretch)
 
-    def time_from_imtime(self, t):
-        """Return mechanical time from image time stamp.
-
-        The time from the mechanical data record is used as the
-        standard.
-
-        """
-        return t - self.image_t0
-
     def image_at(self, t):
         """Return frame (and metadata) at time t.
 
         """
         idx = np.argmin(np.abs(self.imagetimes - t))
+        r = self.tab_images.iloc[idx]
         imtime = self.imagetimes[idx]
         impath = self.imagepaths[idx]
-        imname = self.imagenames[idx]
+        imname = "cam{}_{}_{}".format(r['camera id'],
+                                      r['frame id'],
+                                      r['timestamp (s)'])
         image = mpimg.imread(impath)
 
         mdata = {}
