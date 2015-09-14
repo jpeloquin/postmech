@@ -1,17 +1,20 @@
 import csv
-import numpy as np
-from scipy.sparse import coo_matrix
-from PIL import Image
 import re, os
 from os import path
-import h5py
+from zipfile import ZipFile
 from collections import defaultdict
-import pandas as pd
-import h5py
 import hashlib
+
+import numpy as np
+import pandas as pd
+from scipy.sparse import coo_matrix
+from PIL import Image
+import h5py
 import matplotlib
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
+from lxml import etree as ET
+
 import mechana
 from mechana.images import image_id
 
@@ -74,6 +77,26 @@ def readv2dcsv(f):
     df['x'] = df['x'].astype(np.int)
     df['y'] = df['y'].astype(np.int)
     return df
+
+def _roi(roi):
+    """Return ROI data from xml aoi element."""
+    d = {}
+    d['type'] = roi.get('type')
+    d['subset size'] = int(roi.get('subsetsize'))
+    d['spacing'] = int(roi.get('spacing'))
+    l = roi.find('points').text.split(" ")
+    d['points'] = [(int(l[i]), int(l[i+1]))
+                   for i in range(0, len(l), 2)]
+    return d
+
+def read_z2d(pth):
+    """Read the ROI from a z2d file."""
+    data = {}
+    with ZipFile(pth, 'r').open('project.xml') as f:
+        root = ET.parse(f)
+        rois = map(_roi, root.findall('projectaois/aoi'))
+        data['rois'] = rois
+    return data
 
 class Vic2DDataset:
     """A class to represent a set of Vic-2D data files.
