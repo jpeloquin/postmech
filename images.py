@@ -96,7 +96,7 @@ def tabulate_images(imdir, mech_data_file=None, vic2d_dir=None):
     if vic2d_dir is not None:
         vic2d_files = os.listdir(vic2d_dir)
         tab_v2d = pd.DataFrame(map(decode_impath, vic2d_files))
-        pths = [os.path.relpath(os.path.join(vic2d_dir, p))
+        pths = [os.path.join(vic2d_dir, p)
                 for p in vic2d_files]
         tab_v2d['vic-2d file'] = pths
         tab_v2d = tab_v2d.drop('timestamp (s)', 1)
@@ -262,7 +262,7 @@ def make_vic2d_lists(fp, mech_data, interval=0.01, highres=None,
     imlist = mechana.images.list_images(imdir)
     imlist = [os.path.relpath(f, imdir) for f in imlist]
 
-    tab_frames = frame_stats(imdir, mech_data)
+    tab_frames = tabulate_images(imdir, mech_data)
 
     selected_images = [imindex[zero_strain]]
 
@@ -271,10 +271,10 @@ def make_vic2d_lists(fp, mech_data, interval=0.01, highres=None,
     imname_start = imindex[start]
     imname_end = imindex[end]
 
-    y_start = tab_frames['Stretch Ratio'][imlist.index(imname_start)]
-    y_end = tab_frames['Stretch Ratio'][imlist.index(imname_end)]
+    y_start = tab_frames['stretch ratio'][imlist.index(imname_start)]
+    y_end = tab_frames['stretch ratio'][imlist.index(imname_end)]
     yt = 0
-    for i, y in enumerate(tab_frames['Stretch Ratio']):
+    for i, y in enumerate(tab_frames['stretch ratio']):
         t = image_time(imlist[i])
         if highres is not None:
             inhighres = (y >= highres[0] and y <= highres[1])
