@@ -46,3 +46,9 @@ class Test:
                   "file.".format(row['specimen id'], row['test id']))
 
         return self
+
+def test_signature(spc_id, test_id):
+    """Return unique identifying string for a test."""
+    test_id = int(test_id) if not pd.isnull(test_id) else 'NA'
+    s = "{}_test_{}".format(spc_id, test_id)
+    return s
