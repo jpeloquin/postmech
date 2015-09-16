@@ -16,6 +16,7 @@ class Test:
         self.stress_strain_file = None
         self.image_dir = None
         self.image_paths = []
+        self.image_index_path = None
         self.vic2d_dir = None
         self.vic2d_paths = []
 
@@ -31,6 +32,8 @@ class Test:
             self.image_dir = os.path.join(project_dir, 'data',
                                           row['image directory'])
             self.image_paths = list_images(self.image_dir)
+            self.image_index_path = os.path.join(self.image_dir,
+                                                 'image_index.csv')
 
         ## Vic-2d directory
         if not pd.isnull(row['vic-2d export folder']):
@@ -49,6 +52,9 @@ class Test:
 
 def test_signature(spc_id, test_id):
     """Return unique identifying string for a test."""
-    test_id = int(test_id) if not pd.isnull(test_id) else 'NA'
+    if pd.isnull(test_id) or test_id == 'NA':
+        test_id = 'NA'
+    else:
+        test_id = int(test_id)
     s = "{}_test_{}".format(spc_id, test_id)
     return s
