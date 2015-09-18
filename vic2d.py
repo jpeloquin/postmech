@@ -10,13 +10,14 @@ import pandas as pd
 from scipy.sparse import coo_matrix
 from PIL import Image
 import h5py
-import matplotlib
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 from lxml import etree as ET
 
 import mechana
 from mechana.images import image_id
+from lbplt.colormaps import choose_cmap
 
 # Register diverging colormap
 
@@ -54,7 +55,7 @@ cdict_div = {'red': ((0, 0, 0.0941),
                       (0.8, 0.2549, 0.2549),
                       (0.9, 0.2118, 0.2118),
                       (1, 0.1725, 1))}
-matplotlib.cm.register_cmap(name="lab_diverging",
+mpl.cm.register_cmap(name="lab_diverging",
                             data=cdict_div, lut=256)
 
 def listcsvs(directory):
@@ -292,7 +293,7 @@ def plot_strains(csvpath):
     ax2 = fig.add_subplot(132, aspect='equal')
     ax3 = fig.add_subplot(133, aspect='equal')
     axes = [ax1, ax2, ax3]
-    matplotlib.rcParams.update({'font.size': 10})
+    mpl.rcParams.update({'font.size': 10})
 
     ## Add the three strain plots
     fields = ['exx', 'eyy', 'exy']
@@ -323,7 +324,7 @@ def plot_strains(csvpath):
         ax.invert_yaxis()
 
         ## Add colorbar
-        ticker=matplotlib.ticker.MaxNLocator(nbins=4)
+        ticker = mpl.ticker.MaxNLocator(nbins=4)
         cbar = fig.colorbar(implot,
                             orientation='horizontal',
                             extend=extend,
@@ -337,4 +338,32 @@ def plot_strains(csvpath):
     ## Format figure
     plt.tight_layout()
 
+    return fig
+
+def plot_vic2d_data(data, component,
+                    fig_width=5, fig_height=4, fig_fontsize=12):
+    """Plot a strain field from a Vic-2D data table.
+
+    """
+    fig = plt.figure(figsize=(fig_width,
+                              fig_height))
+    ax = fig.add_subplot(111)
+    ax.axis('off')
+    
+    limits = (data[component].quantile(0.05),
+              data[component].quantile(0.95))
+    cmap, norm = choose_cmap(limits)
+
+    img = strainimg(data, component)
+    aximg = ax.imshow(img, cmap=cmap, norm=norm)
+    
+    ticker = mpl.ticker.MaxNLocator(nbins=5)
+    cb = fig.colorbar(aximg,
+                      ticks=ticker, extend='both',
+                      label=r'$e_{' + component[1:] + '}$',
+                      orientation='horizontal')
+    font = mpl.font_manager.FontProperties(size=fig_fontsize * 1.8)
+    cb.ax.yaxis.label.set_font_properties(font)
+    cb.ax.xaxis.label.set_font_properties(font)
+    fig.tight_layout()
     return fig
