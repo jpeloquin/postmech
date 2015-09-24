@@ -16,6 +16,7 @@ import matplotlib.image as mpimg
 from lxml import etree as ET
 
 import mechana
+from mechana.unit import ureg
 from mechana.images import image_id
 from lbplt.colormaps import choose_cmap
 
@@ -340,7 +341,7 @@ def plot_strains(csvpath):
 
     return fig
 
-def plot_vic2d_data(data, component,
+def plot_vic2d_data(data, component, scale = None,
                     fig_width=5, fig_height=4, fig_fontsize=12):
     """Plot a strain field from a Vic-2D data table.
 
@@ -349,14 +350,33 @@ def plot_vic2d_data(data, component,
                               fig_height))
     ax = fig.add_subplot(111)
     ax.axis('off')
-    
+
     limits = (data[component].quantile(0.05),
               data[component].quantile(0.95))
     cmap, norm = choose_cmap(limits)
 
     img = strainimg(data, component)
+
     aximg = ax.imshow(img, cmap=cmap, norm=norm)
-    
+
+    ## Add 5 mm scale bar
+    if scale is not None:
+        px_barw = 5 * ureg("mm") / scale
+        assert px_barw.units == "pixel"
+        px_barw = px_barw.n
+        from matplotlib.patches import Rectangle
+        from matplotlib.offsetbox import AuxTransformBox, AnchoredOffsetbox
+        transform = ax.transData
+        bars = AuxTransformBox(transform)
+        ylim = ax.get_ylim()
+        px_yrange = ylim[1] - ylim[0]
+        px_barh = px_yrange * 0.03
+        ax.set_ylim(ylim[0] - px_barh * 2.5, ylim[1])
+        bars.add_artist(Rectangle((0,0), px_barw, px_barh, fc="black"))
+        offsetbox = AnchoredOffsetbox(4, pad=0.1, borderpad=0.1,
+                                      child=bars, frameon=False)
+        ax.add_artist(offsetbox)
+
     ticker = mpl.ticker.MaxNLocator(nbins=5)
     cb = fig.colorbar(aximg,
                       ticks=ticker, extend='both',
