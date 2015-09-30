@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 
 import mechana
 from mechana.unit import ureg
-from .images import decode_impath
+from .images import decode_impath, read_image_index, tabulate_images
 from mechana.vic2d import read_strain_components
 
 class MechanicalTest(object):
@@ -360,3 +360,19 @@ def plot_stress_strain(sstable):
     plt.close(fig)
 
     return fig
+
+def ramp_data(test):
+    """Truncate a stress-strain file to only include the ramp.
+
+    """
+    pth = os.path.join(test.test_dir, 'stress_strain.csv')
+    data = pd.read_csv(pth)
+
+    imindex = read_image_index(test.image_index_path)
+    frame0 = decode_impath(imindex['ramp_start'])['frame id']
+    image_tab = tabulate_images(test.image_dir,
+                                test.stress_strain_file,
+                                test.vic2d_dir)
+    t0 = image_tab.loc[image_tab['frame id'] == frame0]['time (s)'].values[0]
+    out = data[data['Time (s)'] >= t0]
+    return out
