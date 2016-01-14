@@ -328,7 +328,7 @@ def xlim_strain(sstable):
     """
     x0 = sstable['Stretch Ratio'].min()
     thresh = 0.01 * sstable['Stress (Pa)'].max()
-    if sstable['Stress (Pa)'].iget(-1) > thresh:
+    if sstable['Stress (Pa)'].iloc[-1] > thresh:
         x1 = sstable['Stretch Ratio'].max()
     else:
         idx = next(i for i in sstable.index[::-1]
