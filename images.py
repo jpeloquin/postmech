@@ -42,7 +42,7 @@ def decode_impath(pth):
     m = re.search(pattern, s)
     d = {'camera id': m.group('cam_id'),
          'frame id': m.group('frame_id'),
-         'timestamp (s)': float(m.group('time'))}
+         'timestamp (s)': m.group('time')}
     return d
 
 def image_id(fpath):
@@ -80,7 +80,7 @@ def tabulate_images(imdir, mech_data_file=None, vic2d_dir=None):
     t_frame0 = t_frame0.nominal_value
     timestamp0 = image_time(imindex["ref_time"])
 
-    t = tab_frames['timestamp (s)'] - timestamp0 + t_frame0
+    t = tab_frames['timestamp (s)'].astype('float') - timestamp0 + t_frame0
     tab_frames['time (s)'] = t
 
     ## Add corresponding stress & strain values
