@@ -380,7 +380,7 @@ def plot_vic2d_data(data, component, scale = None,
     ticker = mpl.ticker.MaxNLocator(nbins=5)
     cb = fig.colorbar(aximg,
                       ticks=ticker, extend='both',
-                      label=r'$e_{' + component[1:] + '}$',
+                      label=r'$E_{' + component[1:] + '}$',
                       orientation='horizontal')
     font = mpl.font_manager.FontProperties(size=fig_fontsize * 1.8)
     cb.ax.yaxis.label.set_font_properties(font)
