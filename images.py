@@ -70,6 +70,9 @@ def tabulate_images(imdir, mech_data_file=None, vic2d_dir=None):
     with the Instron data), and path to the vic-2d data files.
 
     """
+    if imdir is None:
+        raise ValueError("Provided None as image directory.")
+
     ## Load image data
     image_list = list_images(imdir)
     imindex = read_image_index(os.path.join(imdir, 'image_index.csv'))
