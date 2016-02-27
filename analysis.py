@@ -78,8 +78,8 @@ class MechanicalTest(object):
             csvnames = (os.path.basename(f) for f in vic2dfiles)
             fieldtimes = [mechana.images.image_time(nm)
                           for nm in csvnames]
-            self.image_t0 = self.tab_images.iloc[0]['timestamp (s)'] - \
-                            self.tab_images.iloc[0]['time (s)']
+            t = float(self.tab_images.iloc[0]['timestamp (s)'])
+            self.image_t0 = t - self.tab_images.iloc[0]['time (s)']
             self.fieldtimes = np.array(fieldtimes) - self.image_t0
 
     @classmethod
