@@ -19,10 +19,15 @@ class Test:
         self.image_index_path = None
         self.vic2d_dir = None
         self.vic2d_paths = []
+        self.test_record = {}
 
     @classmethod
     def from_row(cls, project_dir, row):
         self = cls(project_dir)
+
+        ## Save test record
+        self.test_record = row
+
         ## Primary data folder for test
         self.test_dir = os.path.join(project_dir, 'data',
                                      row['ramp to failure folder'])
@@ -49,6 +54,9 @@ class Test:
                   "file.".format(row['specimen id'], row['test id']))
 
         return self
+
+    def __getitem__(self, key):
+        return self.test_record[key]
 
 def test_signature(spc_id, test_id):
     """Return unique identifying string for a test."""
