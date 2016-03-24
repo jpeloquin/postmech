@@ -86,9 +86,16 @@ def _roi(roi):
     d['type'] = roi.get('type')
     d['subset size'] = int(roi.get('subsetsize'))
     d['spacing'] = int(roi.get('spacing'))
+    # Exterior boundary
     l = roi.find('points').text.split(" ")
-    d['points'] = [(int(l[i]), int(l[i+1]))
-                   for i in range(0, len(l), 2)]
+    d['exterior'] = [(int(l[i]), int(l[i+1]))
+                     for i in range(0, len(l), 2)]
+    # Interior boundary (cut-outs)
+    e_int = roi.find('cut')
+    if e_int is not None:
+        l = e_int.text.split(" ")
+    d['interior'] = [(int(l[i]), int(l[i+1]))
+                     for i in range(0, len(l), 2)]
     return d
 
 def read_z2d(pth):
