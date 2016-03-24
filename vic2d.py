@@ -96,7 +96,7 @@ def read_z2d(pth):
     data = {}
     with ZipFile(pth, 'r').open('project.xml') as f:
         root = ET.parse(f)
-        rois = map(_roi, root.findall('projectaois/aoi'))
+        rois = [_roi(x) for x in root.findall('projectaois/aoi')]
         data['rois'] = rois
     return data
 
@@ -113,7 +113,7 @@ class Vic2DDataset:
         # The class uses an hdf5 file as the data storage location
         h5path = os.path.join(vicdir, 'data.h5')
         if not os.path.exists(h5path):
-            print h5path + ' does not exist; building.'
+            print(h5path + ' does not exist; building.')
             hdf5ify(vicdir)
             self.h5store = h5py.File(h5path, 'r')
         else:
@@ -134,7 +134,7 @@ class Vic2DDataset:
                     # data is out of sync
                     uptodate = False
             if not uptodate:
-                print h5path + ' not up to date; rebuilding.'
+                print(h5path + ' not up to date; rebuilding.')
                 self.h5store.close()
                 os.remove(h5path)
                 hdf5ify(vicdir)
@@ -200,7 +200,7 @@ def hdf5ify(fdir, h5path=None):
                 try:
                     grp.create_dataset(c, data=df[c])
                 except KeyError:
-                    print ('Error reading file: ' + fp)
+                    print('Error reading file: ' + fp)
                     raise
 
 ### Not used anymore
