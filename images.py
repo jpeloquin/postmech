@@ -110,7 +110,7 @@ def tabulate_images(imdir, mech_data_file=None, vic2d_dir=None):
 
 def image_scale(fpath):
     """Reads `image_scale.csv` and calculates mm/px"""
-    with open(fpath, 'rb') as f:
+    with open(fpath, 'r') as f:
         reader = csv.reader(f)
         for line in reader:
             unit = line[-1]
