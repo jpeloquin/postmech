@@ -9,7 +9,7 @@ def measurement_csv(m, fpath):
     m := pint value with units and uncertainty
 
     """
-    with open(fpath, 'wb') as  f:
+    with open(fpath, 'w', newline='') as  f:
         csvwriter = csv.writer(f, quoting=csv.QUOTE_NONNUMERIC,
                                lineterminator=os.linesep)
         csvwriter.writerow([m.value.magnitude,
