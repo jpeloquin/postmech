@@ -207,7 +207,7 @@ def key_stress_pts(fpath, imdir=None):
     imtime0 = mechana.images.image_time(imindex['ref_time'])
     with open(os.path.join(imdir, "ref_time.csv")) as f:
         reader = csv.reader(f)
-        reftime = float(reader.next()[0])
+        reftime = float(reader.__next__()[0])
     d = imtime0 - reftime
     imtimes = [mechana.images.image_time(nm) - d
                for nm in imlist]
@@ -250,7 +250,7 @@ def key_stress_pts(fpath, imdir=None):
     fpath = os.path.join(imdir, "image_index.csv")
     for k in out:
         imindex[k] = out[k]
-    with open(fpath, 'wb') as f:
+    with open(fpath, 'w', newline='') as f:
         csvwriter = csv.writer(f, quoting=csv.QUOTE_NONNUMERIC,
                                lineterminator=os.linesep)
         for k in imindex:

@@ -152,7 +152,7 @@ def read_image_index(fpath):
     """Returns dictionary of image names for specific test events.
 
     """
-    with open(fpath, 'rb') as csvfile:
+    with open(fpath, 'r', newline='') as csvfile:
         image_index = dict()
         for row in csv.reader(csvfile):
             image_index[row[0]] = row[1]

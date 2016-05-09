@@ -15,7 +15,7 @@ def measurement_csv(fpath):
     value,s.d.,"unit"
 
     """
-    with open(fpath, 'rb') as f:
+    with open(fpath, 'r', newline='') as f:
         reader = csv.reader(f)
         for line in reader:
             unit = ureg(line[-1])
@@ -44,12 +44,12 @@ def bose_data(fpath):
         return l
 
     # Read the file
-    with open(fpath, 'rb') as f:
+    with open(fpath, 'r', newline='') as f:
         lines = f.readlines()
 
     # Find header row and units
     header_row = None
-    for i in xrange(5):
+    for i in range(5):
         line = parseline(lines[i])
         if len(line) > 0 and line[0] == "Elapsed Time":
             header_row = i
@@ -62,7 +62,7 @@ def bose_data(fpath):
 
     # Read data, skipping blank lines
     data = dict(zip(columns, [list() for a in columns]))
-    for i in xrange(header_row + 2, len(lines)):
+    for i in range(header_row + 2, len(lines)):
         line = parseline(lines[i])
         if len(line) > 0:
             for k, v in zip(columns, line):
@@ -94,17 +94,17 @@ def instron_data(fpath):
     t = []
     d = []
     p = []
-    with open(fpath, 'rb') as f:
+    with open(fpath, 'r', newline='') as f:
         reader = csv.reader(f, delimiter=",", quotechar='"')
         for i in range(6): # skip header
-            reader.next()
-        header = reader.next() # read column names
+            reader.__next__()
+        header = reader.__next__() # read column names
         # Check that we arrived at the right row
         assert header[0] == 'Time'
         # Find Load and Extension columns
         dind = header.index('Extension')
         pind = header.index('Load')
-        units = reader.next() # read units
+        units = reader.__next__() # read units
         assert units[0] == "(s)"
         assert units[1] == "(mm)"
         assert units[2] == "(N)"
