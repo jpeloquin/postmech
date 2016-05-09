@@ -122,7 +122,10 @@ def image_scale(fpath):
                 unit = ureg(unit)
                 d = float(line[0]) * unit
                 d = d.plus_minus(float(line[1]))
-    scale = d / px_d
+    try:
+        scale = d / px_d
+    except UnboundLocalError:
+        raise(ValueError("{} does not have complete image scale information".format(fpath)))
     return scale
 
 def from_px(fpath, scale):
