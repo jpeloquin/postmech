@@ -76,7 +76,7 @@ def tabulate_images(imdir, mech_data_file=None, vic2d_dir=None):
     ## Load image data
     image_list = list_images(imdir)
     imindex = read_image_index(os.path.join(imdir, 'image_index.csv'))
-    tab_frames = pd.DataFrame(map(decode_impath, image_list))
+    tab_frames = pd.DataFrame([a for a in map(decode_impath, image_list)])
 
     ## Compute frame times from the perspective of the test clock
     t_frame0 = mechana.read.measurement_csv(os.path.join(imdir, 'ref_time.csv'))
