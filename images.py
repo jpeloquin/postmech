@@ -71,7 +71,7 @@ def tabulate_images(imdir, mech_data_file=None, vic2d_dir=None):
 
     """
     if imdir is None:
-        raise ValueError("Provided None as image directory.")
+        raise(Exception("Provided None as image directory."))
 
     ## Load image data
     image_list = list_images(imdir)
@@ -98,7 +98,7 @@ def tabulate_images(imdir, mech_data_file=None, vic2d_dir=None):
     ## Add paths to vic-2d files
     if vic2d_dir is not None:
         vic2d_files = os.listdir(vic2d_dir)
-        tab_v2d = pd.DataFrame(map(decode_impath, vic2d_files))
+        tab_v2d = pd.DataFrame([decode_impath(a) for a in vic2d_files])
         pths = [os.path.join(vic2d_dir, p)
                 for p in vic2d_files]
         tab_v2d['vic-2d file'] = pths
@@ -125,7 +125,7 @@ def image_scale(fpath):
     try:
         scale = d / px_d
     except UnboundLocalError:
-        raise(ValueError("{} does not have complete image scale information".format(fpath)))
+        raise(Exception("{} does not have complete image scale information".format(fpath)))
     return scale
 
 def from_px(fpath, scale):
