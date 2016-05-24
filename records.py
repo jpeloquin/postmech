@@ -33,7 +33,7 @@ class Test:
                                      row['ramp to failure folder'])
 
         ## Image list
-        if not pd.isnull(row['image directory']):
+        if not (pd.isnull(row['image directory']) or row['image directory'] == 'ND'):
             self.image_dir = os.path.join(project_dir, 'data',
                                           row['image directory'])
             self.image_paths = list_images(self.image_dir)
