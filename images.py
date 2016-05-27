@@ -22,6 +22,15 @@ import mechana
 from mechana import instron
 from mechana.unit import ureg
 
+def lowercase_colname(s):
+    m = re.search(r'\s\(\S+\)$', s)
+    if m:
+        units = s[m.start():m.end()]
+        units = units.strip()[1:-1]
+        return "{} ({})".format(s[0:m.start()].lower(), units)
+    else:
+        return s.lower()
+
 def decode_impath(pth):
     """Return camera number, frame number, & timestamp from image path.
 
@@ -93,7 +102,8 @@ def tabulate_images(imdir, mech_data_file=None, vic2d_dir=None):
             tab_frames[col] = np.interp(tab_frames['time (s)'],
                                         mech_data['Time (s)'],
                                         mech_data[col])
-        tab_frames.columns = [s.lower() for s in tab_frames.columns]
+
+        tab_frames.columns = [lowercase_colname(s) for s in tab_frames.columns]
 
     ## Add paths to vic-2d files
     if vic2d_dir is not None:
