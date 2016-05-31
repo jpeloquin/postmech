@@ -5,6 +5,7 @@ from os import path
 from zipfile import ZipFile
 from collections import defaultdict
 import hashlib
+import warnings
 
 import numpy as np
 import pandas as pd
@@ -76,7 +77,7 @@ def readv2dcsv(f):
     # ^ vic2d adds an extra line at the end, which gets read as a row
     # of missing values.  Hence the dropna call.
     if len(df) == 0:
-        raise ValueError("{} has zero rows of data.".format(f))
+        warnings.warn("{} has zero rows of data.".format(f))
     df['x'] = df['x'].astype(np.int)
     df['y'] = df['y'].astype(np.int)
     return df
