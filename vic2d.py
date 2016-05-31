@@ -1,5 +1,6 @@
 import csv
 import re, os
+import math
 from os import path
 from zipfile import ZipFile
 from collections import defaultdict
@@ -251,12 +252,22 @@ def strainimg(df, field, bbox=None):
     field := Column name in `df` containing the strain data to plot.
 
     bbox := Bounding box [xmin, xmax, ymin, ymax].  Values are
-    inclusive.
+    inclusive.  Only pixels with coordinates on the boundary or in the
+    interior of the bounding box are used for the strain image.  Hence,
+    a bounding box of [-10.5, 10.5, 10.5, 20.5] is equivalent to [-10,
+    10, 11, 20].
 
     """
     if bbox is None:
         bbox = [min(df['x']), max(df['x']),
                 min(df['y']), max(df['y'])]
+
+    # Use integers as bounding box.  Use only pixels completely inside
+    # the bounding box.
+    bbox[0] = int(math.ceil(bbox[0]))
+    bbox[1] = int(math.floor(bbox[1]))
+    bbox[2] = int(math.ceil(bbox[2]))
+    bbox[3] = int(math.ceil(bbox[3]))
 
     # Vic-2D indexes x and y from 0
     strainfield = np.empty((bbox[3] - bbox[2] + 1,
