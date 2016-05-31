@@ -248,10 +248,10 @@ def summarize_vic2d(vicdir, imdir):
 def strainimg(df, field, bbox=None):
     """Create a strain image from a list of values.
 
-    bb := bounding box [xmin, xmax, ymin, ymax]
+    field := Column name in `df` containing the strain data to plot.
 
-    Note that currently xmin and ymin are always considered to be
-    zero.
+    bbox := Bounding box [xmin, xmax, ymin, ymax].  Values are
+    inclusive.
 
     """
     if bbox is None:
