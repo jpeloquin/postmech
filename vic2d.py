@@ -247,6 +247,20 @@ def summarize_vic2d(vicdir, imdir):
            'q95': q95}
     return out
 
+def clip_bbox_to_int(bbox):
+    """Convert bounding box to integer values.
+
+    Discard any partial-pixel edges.
+
+    """
+    # Use integers as bounding box.  Use only pixels completely inside
+    # the bounding box.
+    bbox[0] = int(math.ceil(bbox[0]))
+    bbox[1] = int(math.floor(bbox[1]))
+    bbox[2] = int(math.ceil(bbox[2]))
+    bbox[3] = int(math.floor(bbox[3]))
+    return bbox
+
 def strainimg(df, field, bbox=None):
     """Create a strain image from a list of values.
 
@@ -263,12 +277,7 @@ def strainimg(df, field, bbox=None):
         bbox = [min(df['x']), max(df['x']),
                 min(df['y']), max(df['y'])]
 
-    # Use integers as bounding box.  Use only pixels completely inside
-    # the bounding box.
-    bbox[0] = int(math.ceil(bbox[0]))
-    bbox[1] = int(math.floor(bbox[1]))
-    bbox[2] = int(math.ceil(bbox[2]))
-    bbox[3] = int(math.floor(bbox[3]))
+    bbox = clip_bbox_to_int(bbox)
 
     # Vic-2D indexes x and y from 0
     strainfield = np.empty((bbox[3] - bbox[2] + 1,
