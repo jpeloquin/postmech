@@ -268,7 +268,7 @@ def strainimg(df, field, bbox=None):
     bbox[0] = int(math.ceil(bbox[0]))
     bbox[1] = int(math.floor(bbox[1]))
     bbox[2] = int(math.ceil(bbox[2]))
-    bbox[3] = int(math.ceil(bbox[3]))
+    bbox[3] = int(math.floor(bbox[3]))
 
     # Vic-2D indexes x and y from 0
     strainfield = np.empty((bbox[3] - bbox[2] + 1,
