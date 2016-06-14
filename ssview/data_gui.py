@@ -40,7 +40,7 @@ class MarkerPlotWidget(pg.PlotWidget):
         self.addItem(self.marker)
         self.marker.hide()
 
-        for ax in self.plotItem.axes.iteritems():
+        for ax in self.plotItem.axes.items():
             ax[1]['item'].setTickFont(tick_font)
 
 
@@ -523,7 +523,7 @@ class ColorBar(pg.GraphicsWidget):
         g = pg.QtGui.QLinearGradient(0.0, 0.0, self.w, self.h)
         pos, color = self.colormap.getStops(pg.ColorMap.BYTE)
         color = [QtGui.QColor(*x) for x in color]
-        g.setStops(zip(pos, color))
+        g.setStops([a for a in zip(pos, color)])
         return g
 
     def resizeEvent(self, ev):

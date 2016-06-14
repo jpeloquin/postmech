@@ -18,9 +18,9 @@ import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 
 import mechana
-from mechana.unit import ureg
+from .unit import ureg
 from .images import decode_impath, read_image_index, tabulate_images
-from mechana.vic2d import read_strain_components
+from .vic2d import read_strain_components
 
 class MechanicalTest(object):
     """Mechanical test data.
@@ -93,7 +93,7 @@ class MechanicalTest(object):
 
         """
         datadir = os.path.dirname(pth_json)
-        with open(pth_json, 'rb') as f:
+        with open(pth_json, 'r') as f:
             testdesc = json.load(f)
         pth_ss = os.path.join(datadir, testdesc['stress_strain_file'])
         imagelist = testdesc['images']
