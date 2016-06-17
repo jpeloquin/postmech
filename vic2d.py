@@ -294,11 +294,16 @@ def read_strain_components(pth):
 
     """
     table = readv2dcsv(pth)
-    bbox = [np.min(table['x'].values), np.max(table['x'].values),
-            np.min(table['y'].values), np.max(table['y'].values)]
-    exx = mechana.vic2d.strainimg(table, 'exx', bbox)
-    eyy = mechana.vic2d.strainimg(table, 'eyy', bbox)
-    exy = mechana.vic2d.strainimg(table, 'exy', bbox)
+    if len(table) != 0:
+        bbox = [np.min(table['x'].values), np.max(table['x'].values),
+                np.min(table['y'].values), np.max(table['y'].values)]
+        exx = mechana.vic2d.strainimg(table, 'exx', bbox)
+        eyy = mechana.vic2d.strainimg(table, 'eyy', bbox)
+        exy = mechana.vic2d.strainimg(table, 'exy', bbox)
+    else:
+        exx = []
+        eyy = []
+        exy = []
     components = {'exx': exx,
                   'eyy': eyy,
                   'exy': exy}

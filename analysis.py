@@ -77,6 +77,10 @@ class MechanicalTest(object):
             p.close()
             p.join()
 
+            ## Ignore empty strainfields
+            self.strainfields = [a for a in self.strainfields
+                                 if len(a['exx']) != 0]
+
             csvnames = (os.path.basename(f) for f in vic2dfiles)
             fieldtimes = [mechana.images.image_time(nm)
                           for nm in csvnames]
