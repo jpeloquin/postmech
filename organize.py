@@ -44,5 +44,5 @@ def write_test_file(fout='test_data.json',
         images = [os.path.relpath(impath, outdir) for impath in images]
         data['images'] = images
     # Write JSON
-    with open(fout, 'wb') as f:
+    with open(fout, 'w') as f:
         json.dump(data, f)
