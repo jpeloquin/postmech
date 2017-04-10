@@ -105,8 +105,11 @@ def read_z2d(pth):
     data = {}
     with ZipFile(pth, 'r').open('project.xml') as f:
         root = ET.parse(f)
-        rois = [_roi(x) for x in root.findall('projectaois/aoi')]
-        data['rois'] = rois
+        # Get ROIs
+        data['rois'] = [_roi(x) for x in root.findall('projectaois/aoi')]
+        # Get image list
+        data['images'] = [x.text for x in root.find('files').getchildren()
+                          if x.tag in set(['reference', 'deformed'])]
     return data
 
 class Vic2DDataset:
