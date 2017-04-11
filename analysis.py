@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Functions for analyzing test data.
 
 Calculating metrics & deriving meaning.
