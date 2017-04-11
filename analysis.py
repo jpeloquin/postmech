@@ -12,7 +12,6 @@ import multiprocessing
 import numpy as np
 import pandas as pd
 import matplotlib as mpl
-mpl.use('Agg')
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 
