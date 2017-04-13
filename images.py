@@ -51,7 +51,7 @@ def decode_impath(pth):
     m = re.search(pattern, s)
     d = {'camera id': m.group('cam_id'),
          'frame id': m.group('frame_id'),
-         'timestamp (s)': m.group('time')}
+         'timestamp (s)': float(m.group('time'))}
     return d
 
 def image_id(fpath):
