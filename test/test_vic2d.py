@@ -16,5 +16,5 @@ class Vic2D2009TestCase(unittest.TestCase):
                            "bov_z_latmen_01_vic2d_strain_ramp.z2d")
         z2d = read_z2d(pth)
         assert len(z2d['rois']) == 1
-        self.assertEqual(z2d['rois'][0]['points'][0], (71, 351))
-        self.assertEqual(z2d['rois'][0]['points'][-1], (68, 739))
+        self.assertEqual(z2d['rois'][0]['exterior'][0], (71, 351))
+        self.assertEqual(z2d['rois'][0]['exterior'][-1], (68, 739))
