@@ -96,8 +96,10 @@ def _roi(roi):
     e_int = roi.find('cut')
     if e_int is not None:
         l = e_int.text.split(" ")
-    d['interior'] = [(int(l[i]), int(l[i+1]))
-                     for i in range(0, len(l), 2)]
+        d['interior'] = [(int(l[i]), int(l[i+1]))
+                         for i in range(0, len(l), 2)]
+    else:
+        d['interior'] = None
     return d
 
 def read_z2d(pth):
