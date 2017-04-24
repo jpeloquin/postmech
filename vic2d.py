@@ -1,4 +1,5 @@
 import csv
+from io import BytesIO
 import re, os
 import math
 from os import path
@@ -425,3 +426,49 @@ def plot_vic2d_data(data, component, scale = None,
     cb.ax.xaxis.label.set_font_properties(font)
     fig.tight_layout()
     return fig
+
+def setup_vic2d(pth, imlist, imarchive, roi_xml=None):
+    """Write a Vic-2D image list to a z2d file with the actual images."""
+    # Make sure the output directory exists
+    d, f = os.path.split(pth)
+    fname, ext = os.path.splitext(f)
+    dir_images = os.path.join(d, fname)
+    if not os.path.exists(dir_images):
+        os.makedirs(dir_images)
+    if roi_xml is not None:
+        # Write the z2d file to the output directory
+        xml = replace_imlist_z2dxml(roi_xml,
+            [os.path.join(fname, i) for i in imlist])
+        with ZipFile(os.path.join(d, fname + '.z2d'), 'w') as f:
+            f.writestr('project.xml', xml)
+    else:
+        # Write the image list to the output directory
+        with open(os.path.join(d, fname + '.txt'), 'w') as f:
+            for ln in imlist:
+                f.write(fname + '/' + ln + '\n')
+    # Write the images to the output directory
+    for nm in imlist:
+        with open(os.path.join(dir_images, nm), 'wb') as f:
+            f.write(imarchive.read(nm))
+
+def replace_imlist_z2dxml(xml, imlist):
+    """Replace the <files> tag in Vic-2D XML with a new image list.
+
+    The first image in `imlist` will be used as the reference image.
+    Only the <files> tag and its children will be modified.
+
+    """
+    parser = ET.XMLParser(remove_blank_text=True)
+    tree = ET.parse(BytesIO(xml), parser) # so pretty-printing works
+    root = tree.getroot()
+    # Remove the existing <files> element
+    e = root.find('files')
+    root.remove(e)
+    # Build the new image list
+    e_files = ET.Element('files', attrib={'lri': 'files'})
+    ET.SubElement(e_files, 'reference').text = imlist[0]
+    for i in imlist:
+        ET.SubElement(e_files, 'deformed').text = i
+    # Insert the new image list
+    root.insert(0, e_files)
+    return ET.tostring(tree, pretty_print = True, doctype='<!DOCTYPE vpml>')
