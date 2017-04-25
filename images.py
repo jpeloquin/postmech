@@ -49,9 +49,9 @@ def decode_impath(pth):
                        r'(?P<time>[0-9]+.[0-9]+)',
                        r'(?:.tiff|.csv|.tif)?'])
     m = re.search(pattern, s)
-    d = {'camera id': m.group('cam_id'),
-         'frame id': m.group('frame_id'),
-         'timestamp (s)': float(m.group('time'))}
+    d = {'Camera ID': m.group('cam_id'),
+         'Frame ID': m.group('frame_id'),
+         'Timestamp (s)': float(m.group('time'))}
     return d
 
 def image_id(fpath):
