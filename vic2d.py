@@ -441,11 +441,10 @@ def setup_vic2d(pth, imlist, imarchive, roi_xml=None):
             [os.path.join(fname, i) for i in imlist])
         with ZipFile(os.path.join(d, fname + '.z2d'), 'w') as f:
             f.writestr('project.xml', xml)
-    else:
-        # Write the image list to the output directory
-        with open(os.path.join(d, fname + '.txt'), 'w') as f:
-            for ln in imlist:
-                f.write(fname + '/' + ln + '\n')
+    # Write the image list to the output directory
+    with open(os.path.join(d, fname + '.txt'), 'w') as f:
+        for ln in imlist:
+            f.write(fname + '/' + ln + '\n')
     # Write the images to the output directory
     for nm in imlist:
         with open(os.path.join(dir_images, nm), 'wb') as f:
