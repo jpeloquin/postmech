@@ -158,12 +158,6 @@ def imindex_lookup(csvpath, key):
                 return row[1]
     return None
 
-def label_unit(text):
-    """Split a label (unit) string into parts.
-
-    """
-    pass
-
 def first_crossing(v, threshold, to='right'):
     """Find point in vector that crosses a threshold.
 
