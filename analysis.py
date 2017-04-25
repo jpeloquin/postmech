@@ -164,10 +164,10 @@ def label_unit(text):
     """
     pass
 
-def first_crossing(v, threshold, direction='left'):
+def first_crossing(v, threshold, to='right'):
     """Find point in vector that crosses a threshold.
 
-    direction : 'left' or 'right'
+    to : 'left' or 'right'
         The direction in which the search moves.  'right' means start
         with the first timepoint and search by increasing timepoints;
         'left' means start with the last timepoint and search by
@@ -176,7 +176,7 @@ def first_crossing(v, threshold, direction='left'):
     """
     sign_from_dir = {'left': -1,
                      'right': 1}
-    direction = sign_from_dir[direction]
+    direction = sign_from_dir[to]
     if direction == -1 and v[-1] > threshold:
         # Last point already exceeds threshold
         idx = None
