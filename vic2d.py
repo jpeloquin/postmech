@@ -73,7 +73,7 @@ def listcsvs(directory):
     files = [os.path.join(directory, f) for f in files]
     return sorted(list(files))
 
-def readv2dcsv(f):
+def read_csv(f):
     df = pd.read_csv(f, skipinitialspace=True).dropna(how='all')
     # ^ vic2d adds an extra line at the end, which gets read as a row
     # of missing values.  Hence the dropna call.
