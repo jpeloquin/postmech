@@ -316,7 +316,7 @@ def read_strain_components(pth):
     return components
 
 def plot_strains(csvpath):
-    """Plot strain from a Vic-2D .csv file.
+    """Return three-panel strain fields figure from a Vic-2D .csv file.
 
     """
     df = mechana.vic2d.readv2dcsv(csvpath)
