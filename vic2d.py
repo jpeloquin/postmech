@@ -425,7 +425,10 @@ def plot_vic2d_data(data, component, img=None, scale=None,
         ax.add_artist(offsetbox)
 
     ## Add colorbar
-    ticker = mpl.ticker.MaxNLocator(nbins=5)
+    if not np.all(simg[np.logical_not(np.isnan(simg))] == 0):
+        ticker = mpl.ticker.MaxNLocator(nbins=5)
+    else:
+        ticker = mpl.ticker.FixedLocator([-1, 0, 1])
     cb = fig.colorbar(aximg_strain,
                       ticks=ticker, extend='both',
                       label=r'$E_{' + component[1:] + '}$',
