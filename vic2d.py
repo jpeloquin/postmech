@@ -380,13 +380,13 @@ def plot_strains(csvpath):
 
     return fig
 
-def plot_vic2d_data(data, component, scale = None,
+def plot_vic2d_data(data, component, img=None, scale=None,
                     fig_width=5, fig_height=4, fig_fontsize=12):
     """Plot a strain field from a Vic-2D data table.
 
     """
-    fig = plt.figure(figsize=(fig_width,
-                              fig_height))
+    fig = plt.figure(figsize=(fig_width, fig_height),
+                     frameon=False)
     ax = fig.add_subplot(111)
     ax.axis('off')
 
@@ -394,15 +394,23 @@ def plot_vic2d_data(data, component, scale = None,
               data[component].quantile(0.95))
     cmap, norm = choose_cmap(limits)
 
-    img = strainimg(data, component)
-
-    aximg = ax.imshow(img, cmap=cmap, norm=norm)
+    if img is not None:
+        aximg_gray = ax.imshow(img, cmap='gray')
+        bbox = [0, img.shape[1], 0, img.shape[0]] # x and y swapped in images
+    else:
+        bbox = None
+    simg = strainimg(data, component, bbox=bbox)
+    aximg_strain = ax.imshow(simg, cmap=cmap, norm=norm)
 
     ## Add 5 mm scale bar
     if scale is not None:
-        px_barw = 5 * ureg("mm") / scale
+        try:
+            px_barw = 5 * scale._REGISTRY("mm") * scale
+            assert px_barw.units == "pixel"
+        except AssertionError:
+            px_barw = 5 * scale._REGISTRY("mm") / scale
         assert px_barw.units == "pixel"
-        px_barw = px_barw.n
+        px_barw = px_barw.m
         from matplotlib.patches import Rectangle
         from matplotlib.offsetbox import AuxTransformBox, AnchoredOffsetbox
         transform = ax.transData
@@ -416,8 +424,9 @@ def plot_vic2d_data(data, component, scale = None,
                                       child=bars, frameon=False)
         ax.add_artist(offsetbox)
 
+    ## Add colorbar
     ticker = mpl.ticker.MaxNLocator(nbins=5)
-    cb = fig.colorbar(aximg,
+    cb = fig.colorbar(aximg_strain,
                       ticks=ticker, extend='both',
                       label=r'$E_{' + component[1:] + '}$',
                       orientation='horizontal')
