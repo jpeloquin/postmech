@@ -93,13 +93,13 @@ def tabulate_images(imdir, mech_data_file=None, vic2d_dir=None):
     timestamp0 = image_time(imindex["ref_time"])
 
     t = tab_frames['Timestamp (s)'].astype('float') - timestamp0 + t_frame0
-    tab_frames['time (s)'] = t
+    tab_frames['Time (s)'] = t
 
     ## Add corresponding stress & strain values
     if mech_data_file is not None:
         mech_data = pd.read_csv(mech_data_file)
         for col in set(mech_data.columns) - set(["Time (s)"]):
-            tab_frames[col] = np.interp(tab_frames['time (s)'],
+            tab_frames[col] = np.interp(tab_frames['Time (s)'],
                                         mech_data['Time (s)'],
                                         mech_data[col])
 
