@@ -92,7 +92,7 @@ def tabulate_images(imdir, mech_data_file=None, vic2d_dir=None):
     t_frame0 = t_frame0.nominal_value
     timestamp0 = image_time(imindex["ref_time"])
 
-    t = tab_frames['timestamp (s)'].astype('float') - timestamp0 + t_frame0
+    t = tab_frames['Timestamp (s)'].astype('float') - timestamp0 + t_frame0
     tab_frames['time (s)'] = t
 
     ## Add corresponding stress & strain values
@@ -103,8 +103,6 @@ def tabulate_images(imdir, mech_data_file=None, vic2d_dir=None):
                                         mech_data['Time (s)'],
                                         mech_data[col])
 
-        tab_frames.columns = [lowercase_colname(s) for s in tab_frames.columns]
-
     ## Add paths to vic-2d files
     if vic2d_dir is not None:
         vic2d_files = os.listdir(vic2d_dir)
@@ -112,9 +110,9 @@ def tabulate_images(imdir, mech_data_file=None, vic2d_dir=None):
         pths = [os.path.join(vic2d_dir, p)
                 for p in vic2d_files]
         tab_v2d['vic-2d file'] = pths
-        tab_v2d = tab_v2d.drop('timestamp (s)', 1)
+        tab_v2d = tab_v2d.drop('Timestamp (s)', 1)
         tab_frames = pd.merge(tab_frames, tab_v2d, how='left',
-                              on=['camera id', 'frame id'])
+                              on=['Camera ID', 'Frame ID'])
 
     return tab_frames
 

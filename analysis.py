@@ -82,7 +82,7 @@ class MechanicalTest(object):
             csvnames = (os.path.basename(f) for f in vic2dfiles)
             fieldtimes = [mechana.images.image_time(nm)
                           for nm in csvnames]
-            t = float(self.tab_images.iloc[0]['timestamp (s)'])
+            t = float(self.tab_images.iloc[0]['Timestamp (s)'])
             self.image_t0 = t - self.tab_images.iloc[0]['time (s)']
             self.fieldtimes = np.array(fieldtimes) - self.image_t0
 
@@ -134,9 +134,9 @@ class MechanicalTest(object):
         r = self.tab_images.iloc[idx]
         imtime = self.imagetimes[idx]
         impath = self.imagepaths[idx]
-        imname = "cam{}_{}_{}".format(r['camera id'],
-                                      r['frame id'],
-                                      r['timestamp (s)'])
+        imname = "cam{}_{}_{}".format(r['Camera ID'],
+                                      r['Frame ID'],
+                                      r['Timestamp (s)'])
         image = mpimg.imread(impath)
 
         mdata = {}
@@ -367,10 +367,10 @@ def ramp_data(test):
     data = pd.read_csv(pth)
 
     imindex = read_image_index(test.image_index_path)
-    frame0 = decode_impath(imindex['ramp_start'])['frame id']
+    frame0 = decode_impath(imindex['ramp_start'])['Frame ID']
     image_tab = tabulate_images(test.image_dir,
                                 test.stress_strain_file,
                                 test.vic2d_dir)
-    t0 = image_tab.loc[image_tab['frame id'] == frame0]['time (s)'].values[0]
+    t0 = image_tab.loc[image_tab['Frame ID'] == frame0]['time (s)'].values[0]
     out = data[data['Time (s)'] >= t0]
     return out
