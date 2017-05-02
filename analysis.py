@@ -231,7 +231,7 @@ def key_stress_pts(fpath, imdir=None):
 
         idx = first_crossing(df['Stress (Pa)'].values,
                              threshold=f * peak_stress,
-                             direction='left')
+                             to='left')
         idx_res.append(idx)
 
         # find index of corresponding image (nearest following time)
