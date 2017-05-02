@@ -96,8 +96,11 @@ def instron_data(fpath):
     p = []
     with open(fpath, 'r', newline='') as f:
         reader = csv.reader(f, delimiter=",", quotechar='"')
-        while not reader.__next__() == []:
-            pass
+        try:
+            while not reader.__next__() == []:
+                pass
+        except StopIteration:
+            raise ValueError("Could not find end of header (a blank line) in {}".format(fpath))
         header = reader.__next__() # read column names
         # Check that we arrived at the right row
         assert header[0] == 'Time'
