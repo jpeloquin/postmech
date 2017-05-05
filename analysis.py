@@ -159,7 +159,7 @@ def imindex_lookup(csvpath, key):
     return None
 
 def first_crossing(v, threshold, to='right'):
-    """Find point in vector that crosses a threshold.
+    """Find point in vector ≥ a threshold.
 
     to : 'left' or 'right'
         The direction in which the search moves.  'right' means start
@@ -171,10 +171,10 @@ def first_crossing(v, threshold, to='right'):
     sign_from_dir = {'left': -1,
                      'right': 1}
     direction = sign_from_dir[to]
-    if direction == -1 and v[-1] > threshold:
+    if direction == -1 and v[-1] >= threshold:
         # Last point already exceeds threshold
         idx = None
-    elif direction == 1 and v[0] > threshold:
+    elif direction == 1 and v[0] >= threshold:
         # First point already exceeds threshold
         idx = None
     else:
