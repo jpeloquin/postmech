@@ -285,10 +285,10 @@ def make_vic2d_lists(fp, mech_data, interval=0.01, highres=None,
     imname_start = imindex[start]
     imname_end = imindex[end]
 
-    y_start = tab_frames['stretch ratio'][imlist.index(imname_start)]
-    y_end = tab_frames['stretch ratio'][imlist.index(imname_end)]
+    y_start = tab_frames['Stretch Ratio'][imlist.index(imname_start)]
+    y_end = tab_frames['Stretch Ratio'][imlist.index(imname_end)]
     yt = 0
-    for i, y in enumerate(tab_frames['stretch ratio']):
+    for i, y in enumerate(tab_frames['Stretch Ratio']):
         t = image_time(imlist[i])
         if highres is not None:
             inhighres = (y >= highres[0] and y <= highres[1])
