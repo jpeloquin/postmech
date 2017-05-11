@@ -295,6 +295,16 @@ def strainimg(df, field, bbox=None):
     strainfield[[y, x]] = v
     return strainfield
 
+def img(df, col, shp):
+    """Convert a column in a Vic-2D csv export to an image.
+
+    """
+    # Note: Vic-2D indexes x and y from 0
+    i = np.empty(shp)
+    i.fill(np.nan)
+    i[[df['y'], df['x']]] = df[col]
+    return i
+
 def read_strain_components(pth):
     """Read all strain component images from a Vic-2D csv file.
 
