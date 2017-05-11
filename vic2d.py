@@ -396,7 +396,7 @@ def plot_vic2d_data(data, component, img=None, scale=None,
 
     if img is not None:
         aximg_gray = ax.imshow(img, cmap='gray')
-        bbox = [0, img.shape[1], 0, img.shape[0]] # x and y swapped in images
+        bbox = [0, img.shape[1]-1, 0, img.shape[0]-1] # x and y swapped in images
     else:
         bbox = None
     simg = strainimg(data, component, bbox=bbox)
