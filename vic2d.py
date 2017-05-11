@@ -390,7 +390,7 @@ def plot_strains(csvpath):
 
     return fig
 
-def plot_vic2d_data(data, component, img=None, scale=None,
+def plot_vic2d_data(simg, component, gimg=None, scale=None,
                     fig_width=5, fig_height=4, fig_fontsize=12):
     """Plot a strain field from a Vic-2D data table.
 
@@ -400,16 +400,10 @@ def plot_vic2d_data(data, component, img=None, scale=None,
     ax = fig.add_subplot(111)
     ax.axis('off')
 
-    limits = (data[component].quantile(0.05),
-              data[component].quantile(0.95))
+    limits = (np.nanpercentile(simg, 5),
+              np.nanpercentile(simg, 95))
     cmap, norm = choose_cmap(limits)
 
-    if img is not None:
-        aximg_gray = ax.imshow(img, cmap='gray')
-        bbox = [0, img.shape[1]-1, 0, img.shape[0]-1] # x and y swapped in images
-    else:
-        bbox = None
-    simg = strainimg(data, component, bbox=bbox)
     aximg_strain = ax.imshow(simg, cmap=cmap, norm=norm)
 
     ## Add 5 mm scale bar
