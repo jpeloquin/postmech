@@ -1,5 +1,5 @@
 import csv
-from io import BytesIO
+from io import BytesIO, StringIO
 import re, os
 import math
 from os import path
@@ -74,6 +74,29 @@ def listcsvs(directory):
     return sorted(list(files))
 
 def read_csv(f):
+    """Return data table from a Vic-2D csv file with ≥ 1 ROI.
+
+    f := str or file-like buffer.  A str is treated as a file path.
+
+    This function supports multi-ROI csv files.  Because Vic-2D
+    implements multi-ROI csv files in an inconvenient way, read_table is
+    faster for files with only 1 ROI.
+
+    """
+    if type(f) is str:
+        with open(f) as f:
+            s = f.read()
+    else:
+        s = f.read()
+    # To handle multi-ROI csv files, split string on '\n\n'.  The file
+    # is always terminated with '\n\n', so the last item in the split is
+    # always blank.
+    sections = s.split('\n\n')[:-1]
+    tables = [read_table(StringIO(x)) for x in sections]
+    return tables
+
+def read_table(f):
+    """Return data table from a Vic-2D csv file with 1 ROI."""
     df = pd.read_csv(f, skipinitialspace=True).dropna(how='all')
     # ^ vic2d adds an extra line at the end, which gets read as a row
     # of missing values.  Hence the dropna call.
