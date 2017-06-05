@@ -427,6 +427,9 @@ def plot_vic2d_data(simg, component, gimg=None, scale=None,
               np.nanpercentile(simg, 95))
     cmap, norm = choose_cmap(limits)
 
+    if gimg is not None:
+        aximg_gray = ax.imshow(gimg, cmap='gray')
+
     aximg_strain = ax.imshow(simg, cmap=cmap, norm=norm)
 
     ## Add 5 mm scale bar
