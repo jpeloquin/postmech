@@ -241,6 +241,31 @@ def hdf5ify(fdir, h5path=None):
                     print('Error reading file: ' + fp)
                     raise
 
+def label_regions_strain_tab(tab, polys, inplace=False):
+    """Assign pixels in a strain table to polygonal regions.
+
+    regions := Dictionary.  Key := region labels.  Value := Polygon or MultiPolygon object.
+
+    This function is fairly slow; for large tables, it is recommended to
+    use arrays and masks.
+
+    """
+    if not inplace:
+        tab = tab.copy()
+    tab['region'] = ''
+    for region in polys:
+        poly = polys[region]
+        poly = shapely.prepared.prep(poly)
+        bb = polys[region].bounds
+        m = np.logical_and.reduce([tab_strain['x'] > bb[0],
+                                   tab_strain['x'] < bb[2],
+                                   tab_strain['y'] > bb[1],
+                                   tab_strain['y'] < bb[3]])
+        idx = [i for i, r in tab_strain[m].iterrows()
+               if poly.contains(Point((r['x'], r['y'])))]
+        tab.loc[idx, 'region'] = region
+    return tab
+
 ### Not used anymore
 def summarize_vic2d(vicdir, imdir):
     """Calculate summary statistics for Vic-2D data.
