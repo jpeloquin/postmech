@@ -439,7 +439,8 @@ def plot_strains(csvpath):
     return fig
 
 def plot_vic2d_data(simg, component, gimg=None, scale=None,
-                    fig_width=5, fig_height=4, fig_fontsize=12):
+                    fig_width=5, fig_height=4, fig_fontsize=12,
+                    cmap=None, norm=None):
     """Plot a strain field from a Vic-2D data table.
 
     """
@@ -450,7 +451,8 @@ def plot_vic2d_data(simg, component, gimg=None, scale=None,
 
     limits = (np.nanpercentile(simg, 5),
               np.nanpercentile(simg, 95))
-    cmap, norm = choose_cmap(limits)
+    if cmap is None and norm is None:
+        cmap, norm = choose_cmap(limits)
 
     if gimg is not None:
         aximg_gray = ax.imshow(gimg, cmap='gray')
