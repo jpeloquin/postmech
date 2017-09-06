@@ -16,6 +16,7 @@ import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 
 import mechana
+import pygismo as gismo
 from .unit import ureg
 from .images import decode_impath, read_image_index, tabulate_images
 from .vic2d import read_strain_components
@@ -374,3 +375,10 @@ def ramp_data(test):
     t0 = image_tab.loc[image_tab['Frame ID'] == frame0]['time (s)'].values[0]
     out = data[data['Time (s)'] >= t0]
     return out
+
+def calculate_area(tab):
+    areas = gismo.area_by_pass(tab)
+    area = areas.mean() * ureg('mm**2')
+    area = area.plus_minus(areas.std())
+    area = area.to('m**2')
+    return area
