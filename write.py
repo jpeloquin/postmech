@@ -3,13 +3,15 @@ import os
 
 from .unit import ureg
 
-def measurement_csv(m, fpath, digits=7):
-    """Write measurement to csv file.
+def measurement_csv(m, f, digits=7):
+    """Write measurement to file object.
 
     m := pint value with units and uncertainty
 
+    f := file object or file path
+
     """
-    with open(fpath, 'w', newline='') as  f:
+    def fn(f):
         csvwriter = csv.writer(f, quoting=csv.QUOTE_NONNUMERIC,
                                lineterminator=os.linesep)
         values = [m.value.magnitude, m.error.magnitude]
@@ -17,3 +19,8 @@ def measurement_csv(m, fpath, digits=7):
         num_format = "{:." + str(digits) + "g}"
         values = [num_format.format(x) for x in values]
         csvwriter.writerow(values + [units])
+    if type(f) is str:
+        with open(f, 'w', newline='') as  f:
+            fn(f)
+    else:
+        fn(f)
