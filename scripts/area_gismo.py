@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """Process gismo area output.
 
-Run `area.py --help` from the command line for usage.
+Run `area_gismo.py --help` from the command line for usage.
 
 """
 
@@ -19,7 +19,7 @@ parser.add_argument("infile", type=argparse.FileType('r'),
                     help="Path to gismo_area.txt")
 parser.add_argument("outfile", nargs='?', type=argparse.FileType('w'),
                     default=sys.stdout,
-                    help="Path to output file")
+                    help="Path to output file (default = stdout)")
 args = parser.parse_args()
 reader = csv.reader(args.infile, delimiter="\t")
 # Skip header
