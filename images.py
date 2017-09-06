@@ -12,6 +12,7 @@ $ choose_images IMAGE_INDEX.CSV
 """
 
 import os, re, sys, csv
+from os.path import join as pjoin
 
 import numpy as np
 import pandas as pd
@@ -81,14 +82,22 @@ def tabulate_images(imdir, mech_data_file=None, vic2d_dir=None):
     """
     if imdir is None:
         raise(Exception("Provided None as image directory."))
+    if imdir.endswith('.zip'):
+        p_imdata = os.path.dirname(imdir)
+        p_images = pjoin(p_imdata, imdir[:-4])
+        p_imindex = pjoin(p_imdata, 'image_index.csv')
+    else:
+        p_images = imdir
+        p_imdata = imdir
+        p_imindex = pjoin(imdir, 'image_index.csv')
 
     ## Load image data
-    image_list = list_images(imdir)
-    imindex = read_image_index(os.path.join(imdir, 'image_index.csv'))
+    image_list = list_images(p_images)
+    imindex = read_image_index(p_imindex)
     tab_frames = pd.DataFrame([a for a in map(decode_impath, image_list)])
 
     ## Compute frame times from the perspective of the test clock
-    t_frame0 = mechana.read.measurement_csv(os.path.join(imdir, 'ref_time.csv'))
+    t_frame0 = mechana.read.measurement_csv(os.path.join(p_imdata, 'ref_time.csv'))
     t_frame0 = t_frame0.nominal_value
     timestamp0 = image_time(imindex["ref_time"])
 

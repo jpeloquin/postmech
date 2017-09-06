@@ -184,27 +184,25 @@ def first_crossing(v, threshold, to='right'):
                    if x > threshold)
     return idx
 
-def key_stress_pts(fpath, imdir=None):
+def key_stress_pts(test):
     """Find image frames corresponding to key stress values.
+
+    p := path to mechanical data csv table
 
     Points calculated:
     - Peak (max) stress
     - 1%, 2%, and 5% of peak stress, counting backward
 
     """
-    # Get paths
-    dirname = os.path.dirname(os.path.abspath(fpath))
     # Get mechanical data
-    df = pd.read_csv(fpath)
+    df = pd.read_csv(test.stress_strain_file)
     # Get image data
-    if pd.isnull(imdir):
-        imdir = os.path.join(dirname, "images")
     imlist = [os.path.basename(s)
-              for s in mechana.images.list_images(imdir)]
+              for s in mechana.images.list_images(test.image_dir)]
     imindex = mechana.images.read_image_index(
-        os.path.join(imdir, "image_index.csv"))
+        os.path.join(test.image_measurements_dir, "image_index.csv"))
     imtime0 = mechana.images.image_time(imindex['ref_time'])
-    with open(os.path.join(imdir, "ref_time.csv")) as f:
+    with open(os.path.join(test.image_measurements_dir, "ref_time.csv")) as f:
         reader = csv.reader(f)
         reftime = float(reader.__next__()[0])
     d = imtime0 - reftime
@@ -246,7 +244,7 @@ def key_stress_pts(fpath, imdir=None):
             out[key] = None
 
     # Write frames to image index
-    fpath = os.path.join(imdir, "image_index.csv")
+    fpath = os.path.join(test.image_measurements_dir, "image_index.csv")
     for k in out:
         imindex[k] = out[k]
     with open(fpath, 'w', newline='') as f:
@@ -288,7 +286,7 @@ def key_stress_pts(fpath, imdir=None):
     ax.set_xlabel("Stretch ratio")
     ax.set_ylabel("Stress (MPa)")
     fig.tight_layout()
-    fout = os.path.join(dirname, "key_stress_pts_plot.svg")
+    fout = os.path.join(test.test_dir, "key_stress_pts_plot.svg")
     fig.savefig(fout)
 
     plt.close(fig)
@@ -367,7 +365,8 @@ def ramp_data(test):
     pth = os.path.join(test.test_dir, 'stress_strain.csv')
     data = pd.read_csv(pth)
 
-    imindex = read_image_index(test.image_index_path)
+    imindex = read_image_index(os.path.join(test.image_measurements_dir,
+                                            'image_index.csv'))
     frame0 = decode_impath(imindex['ramp_start'])['Frame ID']
     image_tab = tabulate_images(test.image_dir,
                                 test.stress_strain_file,
