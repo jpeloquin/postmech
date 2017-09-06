@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Process gismo area output.
 
@@ -24,7 +24,7 @@ args = parser.parse_args()
 reader = csv.reader(args.infile, delimiter="\t")
 # Skip header
 for i in (0,1):
-    reader.next()
+    next(reader)
 # Read area from the 2D interpolation column
 area = []
 for row in reader:
