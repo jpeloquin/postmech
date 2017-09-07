@@ -34,8 +34,9 @@ class Test:
         self.test_record = row
 
         ## Primary data folder for test
-        self.test_dir = os.path.join(project_dir, 'data',
-                                     row['ramp to failure folder'])
+        if not pd.isnull(row['ramp to failure folder']):
+            self.test_dir = os.path.join(project_dir, 'data',
+                                         row['ramp to failure folder'])
 
         ## Image list
         if not (pd.isnull(row['image directory']) or row['image directory'] == 'ND'):
@@ -56,10 +57,15 @@ class Test:
                     ZipFile(self.image_archive).extractall(self.image_dir)
                 ## Find out where the image measurements are located,
                 ## using image_index.csv as the sniff test.
-                if os.path.exists(pjoin(self.test_dir, 'image_index.csv')):
+                if (not pd.isnull(self.test_dir) and
+                    os.path.exists(pjoin(self.test_dir, 'image_index.csv'))):
                     self.image_measurements_dir = self.test_dir
-                elif os.path.exists(pjoin(self.image_dir, 'image_index.csv')):
+                elif (not pd.isnull(self.image_dir) and
+                      os.path.exists(pjoin(self.image_dir, 'image_index.csv'))):
                     self.image_measurements_dir = self.image_dir
+                else:
+                    # self.image_measurements_dir = None (default)
+                    pass
             else:
                 self.image_dir = p_images
                 self.image_measurements_dir = self.image_dir
@@ -71,12 +77,13 @@ class Test:
                                           row['vic-2d export folder'])
 
         ## Stress and strain data file
-        self.stress_strain_file = os.path.join(self.test_dir,
-                                               'stress_strain.csv')
-        if not os.path.exists(self.stress_strain_file):
-            self.stress_strain_file = None
-            print("Warning: {} test {} has no stress_strain.csv "
-                  "file.".format(row['specimen id'], row['test id']))
+        if self.test_dir is not None:
+            self.stress_strain_file = os.path.join(self.test_dir,
+                                                   'stress_strain.csv')
+            if not os.path.exists(self.stress_strain_file):
+                self.stress_strain_file = None
+                print("Warning: {} test {} has no stress_strain.csv "
+                      "file.".format(row['specimen id'], row['test id']))
 
         return self
 
