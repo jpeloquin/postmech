@@ -38,14 +38,17 @@ class Test:
             self.test_dir = os.path.join(project_dir, 'data',
                                          row['ramp to failure folder'])
 
-        ## Image list
-        if not (pd.isnull(row['image directory']) or row['image directory'] == 'ND'):
+        ## Images and image-derived measurements (for tests with images)
+        if not pd.isnull(row['image directory']):
             p_images = os.path.join(project_dir, 'data', row['image directory'])
+
+            # If the test uses a .zip image archive, inflate it and set
+            # the image directory to the inflated directory.  We need
+            # unzipped copies of the images.  Lots of code relies on the
+            # images existing as individual files.
             if p_images.endswith('.zip'):
                 self.image_archive = p_images
                 self.image_dir = p_images[:-4]
-                ## We need unzipped copies of the images.  Lots of code
-                ## relies on the images existing as individual files.
                 need_unzip = False
                 if not os.path.exists(self.image_dir):
                     need_unzip = True
@@ -55,21 +58,16 @@ class Test:
                 if need_unzip:
                     logger.info("Unzipping {}".format(self.image_archive))
                     ZipFile(self.image_archive).extractall(self.image_dir)
-                ## Find out where the image measurements are located,
-                ## using image_index.csv as the sniff test.
-                if (not pd.isnull(self.test_dir) and
-                    os.path.exists(pjoin(self.test_dir, 'image_index.csv'))):
-                    self.image_measurements_dir = self.test_dir
-                elif (not pd.isnull(self.image_dir) and
-                      os.path.exists(pjoin(self.image_dir, 'image_index.csv'))):
-                    self.image_measurements_dir = self.image_dir
-                else:
-                    # self.image_measurements_dir = None (default)
-                    pass
             else:
                 self.image_dir = p_images
-                self.image_measurements_dir = self.image_dir
+
+            # List the images in the image directory
             self.image_paths = list_images(self.image_dir)
+
+            # Find the directory with image-derived measurements
+            d = pjoin(self.test_dir, 'image_measurements')
+            if os.path.exists(d):
+                self.image_measurements_dir = d
 
         ## Vic-2d directory
         if not pd.isnull(row['vic-2d export folder']):
