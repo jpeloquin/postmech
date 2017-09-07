@@ -83,13 +83,11 @@ def tabulate_images(imdir, mech_data_file=None, vic2d_dir=None):
     if imdir is None:
         raise(Exception("Provided None as image directory."))
     if imdir.endswith('.zip'):
-        p_imdata = os.path.dirname(imdir)
-        p_images = pjoin(p_imdata, imdir[:-4])
-        p_imindex = pjoin(p_imdata, 'image_index.csv')
+        p_images = pjoin(os.path.dirname(imdir), imdir[:-4])
     else:
         p_images = imdir
-        p_imdata = imdir
-        p_imindex = pjoin(imdir, 'image_index.csv')
+    p_imdata = os.path.join(p_images, '../image_measurements')
+    p_imindex = pjoin(p_imdata, 'image_index.csv')
 
     ## Load image data
     image_list = list_images(p_images)
