@@ -20,10 +20,10 @@ def measurement_csv(fpath):
         for line in reader:
             unit = ureg(line[-1])
             d = float(line[0]) * unit
-            if line[1]:
-                sd = float(line[1])
-            else:
+            if line[1] in set(['NA', 'ND', 'NaN', '']):
                 sd = 0
+            else:
+                sd = float(line[1])
             d = d.plus_minus(sd)
     return d
 
