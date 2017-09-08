@@ -20,6 +20,7 @@ import pygismo as gismo
 from .unit import ureg
 from .images import decode_impath, read_image_index, tabulate_images
 from .vic2d import read_strain_components
+from .write import try_unlock_on_fail
 
 class MechanicalTest(object):
     """Mechanical test data.
@@ -287,7 +288,8 @@ def key_stress_pts(test):
     ax.set_ylabel("Stress (MPa)")
     fig.tight_layout()
     fout = os.path.join(test.test_dir, "key_stress_pts_plot.svg")
-    fig.savefig(fout)
+    f = lambda: fig.savefig(fout)
+    try_unlock_on_fail(f, fout)
 
     plt.close(fig)
 
