@@ -13,6 +13,7 @@ $ choose_images IMAGE_INDEX.CSV
 
 import os, re, sys, csv
 from os.path import join as pjoin
+from zipfile import ZipFile
 
 import numpy as np
 import pandas as pd
@@ -254,7 +255,8 @@ def move_extra(fpath):
             os.rename(os.path.join(imdir, fname),
                       os.path.join(undir, fname))
 
-def make_vic2d_lists(fp, mech_data, interval=0.01, highres=None,
+def make_vic2d_lists(p_imindex, d_images, p_mech_data,
+                     interval=0.01, highres=None,
                      fout='vic2d_list.txt',
                      zero_strain='zero_strain',
                      start='vic2d_start',
@@ -275,15 +277,16 @@ def make_vic2d_lists(fp, mech_data, interval=0.01, highres=None,
         included in the list.
 
     """
-    # Calculate paths
-    fp_imindex = os.path.abspath(fp)
-    imdir = os.path.dirname(fp_imindex)
+    # Read image index
+    imindex = read_image_index(p_imindex)
+    if d_images.endswith('.zip'):
+        archive = ZipFile(d_images)
+        imlist = archive.namelist()
+    else:
+        imlist = [os.path.relpath(f, d_images)
+                  for f in mechana.images.list_images(d_images)]
 
-    imindex = read_image_index(fp_imindex)
-    imlist = mechana.images.list_images(imdir)
-    imlist = [os.path.relpath(f, imdir) for f in imlist]
-
-    tab_frames = tabulate_images(imdir, mech_data)
+    tab_frames = tabulate_images(d_images, p_mech_data)
 
     selected_images = [imindex[zero_strain]]
 
