@@ -74,13 +74,13 @@ def listcsvs(directory):
     return sorted(list(files))
 
 def read_csv(f):
-    """Return data table from a Vic-2D csv file with ≥ 1 ROI.
+    """Return list of data tables from a Vic-2D csv file.
 
     f := str or file-like buffer.  A str is treated as a file path.
 
     This function supports multi-ROI csv files.  Because Vic-2D
-    implements multi-ROI csv files in an inconvenient way, read_table is
-    faster for files with only 1 ROI.
+    implements multi-ROI csv files in an inconvenient way, read_table
+    has to read the file twice and is slower than it should be.
 
     """
     if type(f) is str:
