@@ -113,7 +113,11 @@ def tabulate_images(imdir, mech_data_file=None, vic2d_dir=None):
 
     ## Add paths to vic-2d files
     if vic2d_dir is not None:
-        vic2d_files = os.listdir(vic2d_dir)
+        if vic2d_dir.endswith('.zip'):
+            archive = ZipFile(vic2d_dir)
+            vic2d_files = archive.namelist()
+        else:
+            vic2d_files = os.listdir(vic2d_dir)
         tab_v2d = pd.DataFrame([decode_impath(a) for a in vic2d_files])
         pths = [os.path.join(vic2d_dir, p)
                 for p in vic2d_files]
