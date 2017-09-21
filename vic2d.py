@@ -117,6 +117,7 @@ def _roi(roi):
     d['exterior'] = [(int(l[i]), int(l[i+1]))
                      for i in range(0, len(l), 2)]
     # Interior boundary (cut-outs)
+    # TODO: handle multiple cut-outs
     e_int = roi.find('cut')
     if e_int is not None:
         l = e_int.text.split(" ")
