@@ -59,7 +59,7 @@ class MechanicalTest(object):
             self.tab_images = mechana.images.tabulate_images(imdir,
                 vic2d_dir=dir_vic2d)
             # Image times
-            self.imagetimes = self.tab_images['time (s)']
+            self.imagetimes = self.tab_images['Time (s)']
             # Image lookup table
             imageids = [mechana.images.image_id(f)
                         for f in self.imagepaths]
