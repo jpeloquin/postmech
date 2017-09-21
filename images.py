@@ -119,9 +119,8 @@ def tabulate_images(imdir, mech_data_file=None, vic2d_dir=None):
         else:
             vic2d_files = os.listdir(vic2d_dir)
         tab_v2d = pd.DataFrame([decode_impath(a) for a in vic2d_files])
-        pths = [os.path.join(vic2d_dir, p)
-                for p in vic2d_files]
-        tab_v2d['vic-2d file'] = pths
+        pths = [os.path.join(vic2d_dir, p) for p in vic2d_files]
+        tab_v2d['Vic-2D File'] = pths
         tab_v2d = tab_v2d.drop('Timestamp (s)', 1)
         tab_frames = pd.merge(tab_frames, tab_v2d, how='left',
                               on=['Camera ID', 'Frame ID'])
