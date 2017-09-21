@@ -1,4 +1,7 @@
 import csv
+import io
+import os
+from zipfile import ZipFile
 
 import pandas as pd
 import numpy as np
@@ -6,6 +9,36 @@ from pint import UnitRegistry
 
 import mechana
 from mechana.unit import ureg
+
+def open_archive_file(pth):
+    """Return a file object for a path that may include a .zip file.
+
+    Example:
+
+    f = archive_file('data/archive.zip/cam0_058831_3610.777.csv')
+
+    """
+    # Normalize the path
+    pth = os.path.abspath(pth)
+
+    # Get each element of the path
+    parts = []
+    while pth and pth != '/':
+        head, tail = os.path.split(pth)
+        parts.append(tail)
+        pth = head
+
+    # Walk up the path, opening zip files as necessary.  Currently, the
+    # cases of 0 and 1 zip files are supported.
+    pth = '/'
+    while parts:
+        part = parts.pop()
+        pth = os.path.join(pth, part)
+        if pth.endswith('.zip'):
+            archive = ZipFile(pth)
+            f = archive.open(os.path.join(*parts[::-1]))
+            return io.TextIOWrapper(f)
+    return open(pth)
 
 def measurement_csv(fpath):
     """Read a csv measurement file.
