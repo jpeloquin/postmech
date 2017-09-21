@@ -136,9 +136,9 @@ class MechanicalTest(object):
         r = self.tab_images.iloc[idx]
         imtime = self.imagetimes[idx]
         impath = self.imagepaths[idx]
-        imname = "cam{}_{}_{}".format(r['Camera ID'],
-                                      r['Frame ID'],
-                                      r['Timestamp (s)'])
+        imname = "cam{}_{}_{:.3f}".format(r['Camera ID'],
+                                          r['Frame ID'],
+                                          r['Timestamp (s)'])
         image = mpimg.imread(impath)
 
         mdata = {}
