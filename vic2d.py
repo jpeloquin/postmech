@@ -465,10 +465,10 @@ def plot_vic2d_data(simg, component, gimg=None, scale=None,
     ## Add 5 mm scale bar
     if scale is not None:
         try:
-            px_barw = 5 * scale._REGISTRY("mm") * scale
+            px_barw = (5 * scale._REGISTRY("mm") * scale).to_base_units()
             assert px_barw.units == "pixel"
         except AssertionError:
-            px_barw = 5 * scale._REGISTRY("mm") / scale
+            px_barw = (5 * scale._REGISTRY("mm") / scale).to_base_units()
         assert px_barw.units == "pixel"
         px_barw = px_barw.m
         from matplotlib.patches import Rectangle
