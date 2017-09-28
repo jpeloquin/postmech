@@ -84,14 +84,18 @@ def read_csv(f):
 
     """
     if type(f) is str:
-        with open(f) as f:
+        pth = f
+        with open(pth) as f:
             s = f.read()
     else:
+        pth = f.name
         s = f.read()
     # To handle multi-ROI csv files, split string on '\n\n'.  The file
     # is always terminated with '\n\n', so the last item in the split is
     # always blank.
     sections = s.split('\n\n')[:-1]
+    if len(sections) == 0:
+        warnings.warn("{} has zero rows of data.".format(pth))
     tables = [read_table(StringIO(x)) for x in sections]
     return tables
 
@@ -100,8 +104,6 @@ def read_table(f):
     df = pd.read_csv(f, skipinitialspace=True).dropna(how='all')
     # ^ vic2d adds an extra line at the end, which gets read as a row
     # of missing values.  Hence the dropna call.
-    if len(df) == 0:
-        warnings.warn("{} has zero rows of data.".format(f))
     df['x'] = df['x'].astype(np.int)
     df['y'] = df['y'].astype(np.int)
     return df
