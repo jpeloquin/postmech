@@ -1,9 +1,11 @@
+import json
 import os
 from os.path import join as pjoin
 import logging
 logger = logging.getLogger(__name__)
 from zipfile import ZipFile
 
+import numpy as np
 import pandas as pd
 
 from .images import list_images
@@ -86,6 +88,43 @@ class Test:
 
     def __getitem__(self, key):
         return self.test_record[key]
+
+def meniscus_cr_basis(s_c, s_r):
+    """Return parsed circumferential-radial basis vectors from table.
+
+    Arguments
+    ---------
+    s_c := The circumferential basis vector entry, posterior to anterior.
+
+    s_r := The radial basis vector entry, inner to outer.
+
+    Both s_c and s_r are strings of the form "u[a, b]" or "[a, b]" where
+    a and b are the vector's scalars.  If the string is prefixed with
+    "u", the vector is unsigned; it defines only the direction of the
+    axis, not which direction is positive or negative.  Unsigned vectors
+    usually exist because a test has an incomplete record.
+
+    Returns
+    -------
+    basis, signed
+
+    basis := 2×2 array.  First row is circumferential (posterior to
+    anterior); second row is radial (inner to outer).
+
+    signed := A 2-element vector.  Each element is 1 if the
+    corresponding row of `basis` is signed; 0 if not.
+
+    """
+    def v_from_s(s):
+        signed = {'u': False, '[': True}[s[0]]
+        v = np.array(json.loads(s.lstrip("u")))
+        return v, signed
+    vectors = []
+    signed = []
+    for v, d in map(v_from_s, [s_c, s_r]):
+        vectors.append(v)
+        signed.append(d)
+    return np.array(vectors), np.array(signed)
 
 def test_signature(spc_id, test_id):
     """Return unique identifying string for a test."""
