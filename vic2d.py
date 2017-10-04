@@ -9,7 +9,10 @@ import hashlib
 import warnings
 
 import numpy as np
+import numpy.ma as ma
+from numpy.linalg import inv
 import pandas as pd
+from scipy.ndimage.interpolation import map_coordinates
 from scipy.sparse import coo_matrix
 from PIL import Image
 import h5py
@@ -443,7 +446,8 @@ def plot_strains(csvpath):
 
 def plot_vic2d_data(simg, component, gimg=None, scale=None,
                     fig_width=5, fig_height=4, fig_fontsize=12,
-                    cmap=None, norm=None):
+                    cmap=None, norm=None,
+                    basis=np.eye(2)):
     """Plot a strain field from a Vic-2D data table.
 
     """
@@ -457,10 +461,61 @@ def plot_vic2d_data(simg, component, gimg=None, scale=None,
     if cmap is None and norm is None:
         cmap, norm = choose_cmap(limits)
 
-    if gimg is not None:
-        aximg_gray = ax.imshow(gimg, cmap='gray')
+    # Use a masked array for the strain field so the spline-based image
+    # transforms work.  The transformation undoes the mask.
+    mask = np.isnan(simg)
+    simg[mask] = 0
+    simg = ma.array(simg, mask=mask)
 
-    aximg_strain = ax.imshow(simg, cmap=cmap, norm=norm)
+    def transform_image(img, basis):
+        """Transform image so basis[0] is right and basis[1] is up.
+
+        img := Masked array; the image to be transformed.
+
+        basis := 2x2 array mapping Vic-2D image xy coordinates to the
+        plot axes.  That is, the row vectors of `basis` define the
+        plot's x and y vectors in the image's xy coordinate system U,
+        where U is defined by x = right and y = down in the as-displayed
+        image.
+
+        """
+        # prefixes:
+        # i := original image ij (units = px); i → y, j → x
+        # x := original image xy (units = px); aka U
+        # j := transformed image ij; i → x, j → y
+        # y := transformed image xy; aka V
+
+        i_shp = img.shape
+        i_bb = np.array([[i_shp[0], i_shp[1]],
+                         [0, i_shp[1]],
+                         [0, 0],
+                         [i_shp[0], 0]]).T
+        x_aff_i = np.array([[0, 1],
+                            [1, 0]])
+        x_bb = np.dot(x_aff_i, i_bb)
+        y_aff_x = basis
+        y_bb = np.dot(y_aff_x, x_bb)
+        y_max = np.ceil(np.max(y_bb, axis=1)).astype('int')
+        y_min = np.floor(np.min(y_bb, axis=1)).astype('int')
+        y_grid = np.mgrid[y_min[0]:y_max[0], y_min[1]:y_max[1]]
+        j_shp = y_grid.shape[1:]
+
+        i_transf = inv(x_aff_i) @ inv(y_aff_x) @ y_grid.reshape(2, -1)
+        img_transf = map_coordinates(img, i_transf, cval=np.nan).reshape(j_shp)
+        mask_transf = map_coordinates(img.mask, i_transf, cval=np.nan, order=0).reshape(j_shp)
+        img_transf[mask_transf] = np.nan
+        # Return to standard image convention
+        return img_transf.swapaxes(0, 1)
+
+    simg = transform_image(simg, basis)
+
+    # Plot photo
+    if gimg is not None:
+        gimg = transform_image(gimg, basis)
+        aximg_gray = ax.imshow(gimg, cmap='gray', origin='lower')
+
+    # Plot strain field
+    aximg_strain = ax.imshow(simg, cmap=cmap, norm=norm, origin='lower')
 
     ## Add 5 mm scale bar
     if scale is not None:
