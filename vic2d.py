@@ -349,7 +349,7 @@ def strainimg(df, field, bbox=None):
     strainfield[[y, x]] = v
     return strainfield
 
-def transform_image(img, basis):
+def transform_image(img, basis, order=3):
     """Transform image so basis[0] is right and basis[1] is up.
 
     img := Masked array; the image to be transformed.
@@ -389,7 +389,7 @@ def transform_image(img, basis):
     j_shp = y_grid.shape[1:]
 
     i_transf = inv(x_aff_i) @ inv(y_aff_x) @ y_grid.reshape(2, -1)
-    img_transf = map_coordinates(img, i_transf, cval=np.nan).reshape(j_shp)
+    img_transf = map_coordinates(img, i_transf, cval=np.nan, order=order).reshape(j_shp)
     mask_transf = map_coordinates(img.mask, i_transf, cval=np.nan, order=0).reshape(j_shp)
     img_transf[mask_transf] = np.nan
     # Return to standard image convention
