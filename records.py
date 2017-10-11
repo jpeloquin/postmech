@@ -25,14 +25,14 @@ class Test:
         self.image_measurements_dir = None
         self.vic2d_dir = None
         self.vic2d_paths = []
-        self.test_record = {}
+        self.record = {}
 
     @classmethod
     def from_row(cls, project_dir, row):
         self = cls(project_dir)
 
         ## Save test record
-        self.test_record = row
+        self.record = row
 
         ## Primary data folder for test
         if not pd.isnull(row['ramp to failure folder']):
@@ -87,7 +87,7 @@ class Test:
         return self
 
     def __getitem__(self, key):
-        return self.test_record[key]
+        return self.record[key]
 
 def meniscus_cr_basis(s_c, s_r):
     """Return parsed circumferential-radial basis vectors from table.
