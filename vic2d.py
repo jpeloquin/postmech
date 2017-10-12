@@ -272,7 +272,8 @@ def label_regions_strain_tab(tab, polys, inplace=False):
         tab.loc[idx, 'region'] = region
     return tab
 
-### Not used anymore
+### Deprecated.  Still used in filter size sensitivity and subset size
+### sensitivity analysis.
 def summarize_vic2d(vicdir, imdir):
     """Calculate summary statistics for Vic-2D data.
 
@@ -306,6 +307,33 @@ def summarize_vic2d(vicdir, imdir):
            'median': q50,
            'q95': q95}
     return out
+
+def summarize_strain_field(data):
+    """Return strain field summary statistics.
+
+    """
+    out = {}
+    cols_out = ['exx', 'eyy', '|exy|']
+    data['|exy|'] = np.abs(data['exy'])
+    # Summary statistic functions
+    fn_from_key = {'n': lambda x: x.count(),
+                   'median': lambda x: x.median(),
+                   'mean': lambda x: x.mean(),
+                   'sd': lambda x: x.std(),
+                   '0.025 quantile': lambda x: x.quantile(.025),
+                   '0.975 quantile': lambda x: x.quantile(.975),
+                   '0.16 quantile': lambda x: x.quantile(.16),
+                   '0.84 quantile': lambda x: x.quantile(.84),
+                   '0.25 quantile': lambda x: x.quantile(.25),
+                   '0.75 quantile': lambda x: x.quantile(.75)}
+    # Compute summary statistics for each strain component
+    rows = []
+    for c in cols_out:
+        for k, fn in fn_from_key.items():
+            rows.append({'component': c,
+                         'statistic': k,
+                         'value': fn(data[c])})
+    return pd.DataFrame(rows)
 
 def clip_bbox_to_int(bbox):
     """Convert bounding box to integer values.
