@@ -1,16 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-`choose_images` is a command line tool to sequester images from a
-mechanical test that aren't needed for Vic2D analysis.  It uses
-information from a correctly filled out `image_index.csv` choose which
-images are useful.
-
-Usage:
-
-$ choose_images IMAGE_INDEX.CSV
-
-"""
-
 import os, re, sys, csv
 from os.path import join as pjoin
 from zipfile import ZipFile
@@ -243,21 +230,6 @@ def get_image_list(fpath):
         imlist.append((fname, curr_phase))
     return imlist
 
-def move_extra(fpath):
-    """Moves extra images to 'unneeded' folder.
-
-    """
-    fpath = os.path.abspath(fpath)
-    imlist = get_image_list(fpath)
-    imdir = os.path.dirname(fpath)
-    undir = os.path.join(imdir, "unneeded")
-    if not os.path.exists(undir):
-        os.makedirs(undir)
-    for fname, phase in imlist:
-        if phase == 'extra':
-            os.rename(os.path.join(imdir, fname),
-                      os.path.join(undir, fname))
-
 def make_vic2d_lists(p_imindex, d_images, p_mech_data,
                      interval=0.01, highres=None,
                      fout='vic2d_list.txt',
@@ -316,10 +288,3 @@ def make_vic2d_lists(p_imindex, d_images, p_mech_data,
     with open(fout, 'w') as f:
         for nm in selected_images:
             f.write(nm + '\n')
-
-if __name__ == "__main__":
-    """Hides images that are unnecessary for vic2d."""
-    fpath = os.path.abspath(sys.argv[1])
-    if not os.path.isfile(fpath):
-        raise Exception(sys.argv[1] + " is not a file or does not exist.")
-    move_extra(fpath)
