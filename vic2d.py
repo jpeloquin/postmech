@@ -24,46 +24,10 @@ from lxml import etree as ET
 import mechana
 from mechana.unit import ureg
 from mechana.images import image_id
-from lbplt.colormaps import choose_cmap
+from lbplt.colormaps import choose_cmap, cdict_div
 
-# Register diverging colormap
-
-n = 256 # desired number of intensity levels
-cdict_div = {'red': ((0, 0, 0.0941),
-                     (0.1, 0.2745, 0.2745),
-                     (0.2, 0.4275, 0.4275),
-                     (0.3, 0.6275, 0.6275),
-                     (0.4, 0.8118, 0.8118),
-                     (0.5, 0.9451, 0.9451),
-                     (0.6, 0.9569, 0.9569),
-                     (0.7, 0.9725, 0.9725),
-                     (0.8, 0.8824, 0.8824),
-                     (0.9, 0.7333, 0.7333),
-                     (1, 0.5647, 1)),
-             'green': ((0.0, 0, 0.3098),
-                       (0.1, 0.3882, 0.3882),
-                       (0.2, 0.6000, 0.6000),
-                       (0.3, 0.7451, 0.7451),
-                       (0.4, 0.8863, 0.8863),
-                       (0.5, 0.9569, 0.9569),
-                       (0.6, 0.8549, 0.8549),
-                       (0.7, 0.7216, 0.7216),
-                       (0.8, 0.5725, 0.5725),
-                       (0.9, 0.4706, 0.4706),
-                       (1, 0.3922, 0)),
-             'blue': ((0.0, 0, 0.6353),
-                      (0.1, 0.6824, 0.6824),
-                      (0.2, 0.8078, 0.8078),
-                      (0.3, 0.8824, 0.8824),
-                      (0.4, 0.9412, 0.9412),
-                      (0.5, 0.9608, 0.9608),
-                      (0.6, 0.7843, 0.7843),
-                      (0.7, 0.5451, 0.5451),
-                      (0.8, 0.2549, 0.2549),
-                      (0.9, 0.2118, 0.2118),
-                      (1, 0.1725, 1))}
 mpl.cm.register_cmap(name="lab_diverging",
-                            data=cdict_div, lut=256)
+                     data=cdict_div, lut=256)
 
 def listcsvs(directory):
     """List csv files in a directory.
