@@ -4,6 +4,7 @@ from zipfile import ZipFile
 
 import numpy as np
 import pandas as pd
+from PIL import Image, ImageDraw
 
 from uncertainties import ufloat
 
@@ -288,3 +289,36 @@ def make_vic2d_lists(p_imindex, d_images, p_mech_data,
     with open(fout, 'w') as f:
         for nm in selected_images:
             f.write(nm + '\n')
+
+def mask_from_poly(poly, shape):
+    """Create an image mask from a `shapely` polygon.
+
+    poly := Polygon, MultiPolygon, or list of Polygon objects
+
+    shape := (ny <int>, nx <int>).  Shape of the image array into which
+    the polygon mask should be drawn.
+
+    """
+    if poly is None:
+        return np.ones(shape, dtype=bool)
+
+    if not hasattr(poly, '__iter__'):
+        # Single polygon, not MultiPolygon or list of polygons.  Make it
+        # a list so we can use a common execution path.
+        poly = [poly]
+
+    # Buffer the polygons to get closer to the `shapely` result; see
+    # Peloquin 2017-05-07 journal entry in personal notes.
+    poly = [p.buffer(0.5) for p in poly]
+
+    # Draw the polygon(s) into the mask
+    mask = Image.new('L', (shape[1], shape[0]), 0)
+    def draw(mask, coords, fill=1):
+        ImageDraw.Draw(mask).polygon(coords, outline=0, fill=fill)
+    for p in poly:
+        # Draw the entire polygon into the mask
+        draw(mask, p.exterior.coords[:])
+        # Anti-draw any holes into mask
+        for hole in p.interiors:
+            draw(mask, hole.coords[:], 0)
+    return np.array(mask).astype('bool')
