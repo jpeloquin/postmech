@@ -10,7 +10,7 @@ from pint import UnitRegistry
 import mechana
 from mechana.unit import ureg
 
-def open_archive_file(pth):
+def open_archive_file(pth, mode='rt'):
     """Return a file object for a path that may include a .zip file.
 
     Example:
@@ -37,8 +37,11 @@ def open_archive_file(pth):
         if pth.endswith('.zip'):
             archive = ZipFile(pth)
             f = archive.open(os.path.join(*parts[::-1]))
-            return io.TextIOWrapper(f)
-    return open(pth)
+            if 'b' in mode:
+                return io.BytesIO(f)
+            elif 't' in mode:
+                return io.TextIOWrapper(f)
+    return open(pth, mode)
 
 def measurement_csv(fpath):
     """Read a csv measurement file.
