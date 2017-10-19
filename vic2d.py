@@ -68,11 +68,12 @@ def read_csv(f):
 
 def read_table(f):
     """Return data table from a Vic-2D csv file with 1 ROI."""
-    df = pd.read_csv(f, skipinitialspace=True).dropna(how='all')
+    df = pd.read_csv(f, skipinitialspace=True,
+                     skip_blank_lines=True)
     # ^ vic2d adds an extra line at the end, which gets read as a row
-    # of missing values.  Hence the dropna call.
     df['x'] = df['x'].astype(np.int)
     df['y'] = df['y'].astype(np.int)
+    # of missing values.  Hence skip_blank_lines.
     return df
 
 def _roi(roi):
