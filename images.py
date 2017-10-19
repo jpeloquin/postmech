@@ -112,6 +112,8 @@ def tabulate_images(imdir, mech_data_file=None, vic2d_dir=None):
         tab_v2d = tab_v2d.drop('Timestamp (s)', 1)
         tab_frames = pd.merge(tab_frames, tab_v2d, how='left',
                               on=['Camera ID', 'Frame ID'])
+    else:
+        tab_frames['Vic-2D File'] = np.nan
 
     return tab_frames
 
