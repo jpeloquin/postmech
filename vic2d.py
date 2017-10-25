@@ -313,23 +313,26 @@ def clip_bbox_to_int(bbox):
     bbox[3] = int(math.floor(bbox[3]))
     return bbox
 
-def strainimg(df, field, bbox=None):
+def strainimg(df, field, extent=None):
     """Create a strain image from a list of values.
 
     field := Column name in `df` containing the strain data to plot.
 
-    bbox := Bounding box [xmin, xmax, ymin, ymax].  Values are
+    extent := Bounding box [xmin, xmax, ymin, ymax].  Values are
     inclusive.  Only pixels with coordinates on the boundary or in the
     interior of the bounding box are used for the strain image.  Hence,
     a bounding box of [-10.5, 10.5, 10.5, 20.5] is equivalent to [-10,
     10, 11, 20].
 
-    """
-    if bbox is None:
-        bbox = [min(df['x']), max(df['x']),
-                min(df['y']), max(df['y'])]
+    Note that `extent` is used the same as in matplotlib's `imshow`
+    function.
 
-    bbox = clip_bbox_to_int(bbox)
+    """
+    if extent is None:
+        extent = [min(df['x']), max(df['x']),
+                  min(df['y']), max(df['y'])]
+
+    bbox = clip_bbox_to_int(extent)
 
     # Vic-2D indexes x and y from 0
     strainfield = np.empty((bbox[3] - bbox[2] + 1,
@@ -339,7 +342,8 @@ def strainimg(df, field, bbox=None):
     y = df['y'] - bbox[2]
     v = df[field]
     strainfield[[y, x]] = v
-    return strainfield
+    extent = bbox
+    return strainfield, extent
 
 def transform_image(img, basis, order=3):
     """Transform image so basis[0] is right and basis[1] is up.
@@ -442,7 +446,7 @@ def plot_strains(csvpath):
     ctitles = ['$e_{xx}$', '$e_{yy}$','$e_{xy}$']
     for i, field in enumerate(fields):
         ## Plot strain image
-        im = strainimg(df, field)
+        im, extent = strainimg(df, field)
         ax = axes[i]
         cmin, cmax = np.percentile(df[field].values, [5, 95])
         extremum = max(abs(cmin), abs(cmax))
@@ -485,7 +489,7 @@ def plot_strains(csvpath):
 def plot_vic2d_data(simg, component, gimg=None, scale=None,
                     fig_width=5, fig_height=4, fig_fontsize=12,
                     cmap=None, norm=None,
-                    basis=np.eye(2)):
+                    basis=np.eye(2), extent=None):
     """Plot a strain field from a Vic-2D data table.
 
     """
@@ -502,6 +506,15 @@ def plot_vic2d_data(simg, component, gimg=None, scale=None,
     # Transform the strain field so it is aligned with provided
     # axes.
     simg = transform_image(simg, basis)
+    # Similarly, transform the extent
+    if extent is not None:
+        bbox = np.array([[extent[1], extent[3]],
+                         [extent[0], extent[3]],
+                         [extent[0], extent[2]],
+                         [extent[1], extent[2]]]) @ basis
+        minima = np.min(bbox, axis=0)
+        maxima = np.max(bbox, axis=0)
+        extent = [minima[0], maxima[0], minima[1], maxima[1]]
 
     # Plot photo
     if gimg is not None:
@@ -509,7 +522,8 @@ def plot_vic2d_data(simg, component, gimg=None, scale=None,
         aximg_gray = ax.imshow(gimg, cmap='gray', origin='lower')
 
     # Plot strain field
-    aximg_strain = ax.imshow(simg, cmap=cmap, norm=norm, origin='lower')
+    aximg_strain = ax.imshow(simg, cmap=cmap, norm=norm, origin='lower',
+                             extent=extent)
 
     ## Add 5 mm scale bar
     if scale is not None:
