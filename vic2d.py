@@ -492,6 +492,10 @@ def plot_vic2d_data(simg, component, gimg=None, scale=None,
                     basis=np.eye(2), extent=None):
     """Plot a strain field from a Vic-2D data table.
 
+    basis := 2×2 array.  First row is circumferential (posterior to
+    anterior); second row is radial (inner to outer); both in image xy
+    coordinates.
+
     """
     fig = plt.figure(figsize=(fig_width, fig_height),
                      frameon=False)
@@ -511,7 +515,7 @@ def plot_vic2d_data(simg, component, gimg=None, scale=None,
         bbox = np.array([[extent[1], extent[3]],
                          [extent[0], extent[3]],
                          [extent[0], extent[2]],
-                         [extent[1], extent[2]]]) @ basis
+                         [extent[1], extent[2]]]) @ basis.T
         minima = np.min(bbox, axis=0)
         maxima = np.max(bbox, axis=0)
         extent = [minima[0], maxima[0], minima[1], maxima[1]]
