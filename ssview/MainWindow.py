@@ -37,7 +37,7 @@ class MainWindow(QtGui.QMainWindow):
 
         """
         msg = 'Open test data JSON file'
-        pth = str(QtGui.QFileDialog.getOpenFileName(self, msg))
+        pth, _filter = QtGui.QFileDialog.getOpenFileName(self, msg)
         self.load_data(pth)
 
     def load_data(self, pth):
