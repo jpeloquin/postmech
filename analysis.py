@@ -85,7 +85,7 @@ class MechanicalTest(object):
             fieldtimes = [mechana.images.image_time(nm)
                           for nm in csvnames]
             t = float(self.tab_images.iloc[0]['Timestamp (s)'])
-            self.image_t0 = t - self.tab_images.iloc[0]['time (s)']
+            self.image_t0 = t - self.tab_images.iloc[0]['Time (s)']
             self.fieldtimes = np.array(fieldtimes) - self.image_t0
 
     @classmethod

@@ -405,13 +405,13 @@ def read_strain_components(pth):
     """Read all strain component images from a Vic-2D csv file.
 
     """
-    table = readv2dcsv(pth)
+    table = pd.concat(read_csv(pth))
     if len(table) != 0:
         bbox = [np.min(table['x'].values), np.max(table['x'].values),
                 np.min(table['y'].values), np.max(table['y'].values)]
-        exx = mechana.vic2d.strainimg(table, 'exx', bbox)
-        eyy = mechana.vic2d.strainimg(table, 'eyy', bbox)
-        exy = mechana.vic2d.strainimg(table, 'exy', bbox)
+        exx, ext = mechana.vic2d.strainimg(table, 'exx', bbox)
+        eyy, ext = mechana.vic2d.strainimg(table, 'eyy', bbox)
+        exy, ext = mechana.vic2d.strainimg(table, 'exy', bbox)
     else:
         exx = []
         eyy = []

@@ -2,8 +2,8 @@ import os
 
 import numpy as np
 
-from PyQt4 import QtGui, QtCore, uic
-from PyQt4.QtCore import pyqtSlot, pyqtSignal, QObject
+from PyQt5 import QtGui, QtCore, uic
+from PyQt5.QtCore import pyqtSlot, pyqtSignal, QObject
 import pyqtgraph as pg
 
 from datainput import TestData

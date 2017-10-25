@@ -1,0 +1,3 @@
+[submodule "ssview/pyqtgraph"]
+	path = ssview/pyqtgraph
+	url = https://github.com/pyqtgraph/pyqtgraph.git

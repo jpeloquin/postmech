@@ -1,5 +1,5 @@
-from PyQt4 import QtGui, QtCore, uic
-from PyQt4.QtCore import pyqtSlot, pyqtSignal
+from PyQt5 import QtGui, QtCore, QtWidgets, uic
+from PyQt5.QtCore import pyqtSlot, pyqtSignal
 import pyqtgraph as pg
 import numpy as np
 import os, sys
@@ -29,7 +29,7 @@ class MainWindow(QtGui.QMainWindow):
         # Initialize the python parts of the UI
         self.data_view = DataView(parent_window=self)
         self.actionOpen.triggered.connect(self.ui_open)
-        self.actionQuit.triggered.connect(QtGui.qApp.quit)
+        self.actionQuit.triggered.connect(QtWidgets.qApp.quit)
         self.setCentralWidget(self.data_view)
 
     def ui_open(self):
@@ -55,7 +55,7 @@ def main(pth_data=None):
     app.exec_()
 
 if __name__ == '__main__':
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
     if len(sys.argv) > 1:
         pth_data = sys.argv[1]
     else:
