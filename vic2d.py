@@ -15,7 +15,6 @@ import pandas as pd
 from scipy.ndimage.interpolation import map_coordinates
 from scipy.sparse import coo_matrix
 from PIL import Image
-import h5py
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
@@ -108,108 +107,10 @@ def read_z2d(pth):
                           if x.tag in set(['reference', 'deformed'])]
     return data
 
-class Vic2DDataset:
-    """A class to represent a set of Vic-2D data files.
-
-    """
-    h5store = None
-    keys = []
-    hashes = []
-    csvpaths = []
-
-    def __init__(self, vicdir):
-        # The class uses an hdf5 file as the data storage location
-        h5path = os.path.join(vicdir, 'data.h5')
-        if not os.path.exists(h5path):
-            print(h5path + ' does not exist; building.')
-            hdf5ify(vicdir)
-            self.h5store = h5py.File(h5path, 'r')
-        else:
-            self.load_h5(h5path)
-            # Make sure the h5 file is up to date
-            uptodate = True
-            csvfiles = [f for f in listcsvs(vicdir)]
-            csvhashes = [hashfile(f) for f in csvfiles]
-            keys = [mechana.images.image_id(f) for f in csvfiles]
-            h5hashdict = dict(zip(self.keys, self.hashes))
-            csvhashdict = dict(zip(keys, csvhashes))
-            allkeys = set(keys + self.keys.value.tolist())
-            for k in allkeys:
-                if k not in self.keys or k not in keys:
-                    # a frame exists in only one location
-                    uptodate = False
-                if h5hashdict[k] != csvhashdict[k]:
-                    # data is out of sync
-                    uptodate = False
-            if not uptodate:
-                print(h5path + ' not up to date; rebuilding.')
-                self.h5store.close()
-                os.remove(h5path)
-                hdf5ify(vicdir)
-                self.load_h5(h5path)
-
-    def load_h5(self, h5path):
-        self.h5store = h5py.File(h5path, 'r')
-        self.keys = self.h5store["keys"]
-        self.hashes = self.h5store["csvhashes"]
-        self.csvpaths = self.h5store["csvpaths"]
-
-    def __getitem__(self, key):
-        group = self.h5store[key]
-        fields = group.keys()
-        columns = [group[k].value for k in fields]
-        df = pd.DataFrame.from_dict(dict(zip(fields, columns)))
-        return df
-
-    def __len__(self):
-        return len(self.keys)
-
-    def __del__(self):
-        """Close the h5 file on object destruction.
-
-        """
-        self.h5store.close()
-
 def hashfile(fpath):
     with open(fpath, 'rb') as f:
         fhash = hashlib.sha1(f.read()).hexdigest()
     return fhash
-
-def hdf5ify(fdir, h5path=None):
-    """Read csv files and store them in an hdf5 file.
-
-    Storing the data in a binary format is intended to permit faster
-    reads and interoperability between sofware packages.
-
-    """
-    savecolumns = ['x', 'y', 'u', 'v', 'exx', 'eyy', 'exy']
-
-    # Define output path
-    if h5path is None:
-        h5path = os.path.join(fdir, 'data.h5')
-    # Create list of vic2d csv files in the directory
-    csvfiles = [f for f in listcsvs(fdir)]
-    key = [image_id(f) for f in csvfiles]
-    fhashes = [hashfile(f) for f in csvfiles]
-    hashdict = dict(zip(key, fhashes))
-    fpdict = dict(zip(key, csvfiles))
-    mdata = pd.DataFrame.from_dict({'key': key,
-                                    'hash': fhashes,
-                                    'csvpath': csvfiles})
-    with h5py.File(h5path, 'w') as h5store:
-        h5store.create_dataset("keys", data=key)
-        h5store.create_dataset("csvpaths",
-            data=[os.path.basename(f) for f in csvfiles])
-        h5store.create_dataset("csvhashes", data=fhashes)
-        for k, fp in zip(key, csvfiles):
-            df = readv2dcsv(fp)
-            grp = h5store.create_group(k)
-            for c in savecolumns:
-                try:
-                    grp.create_dataset(c, data=df[c])
-                except KeyError:
-                    print('Error reading file: ' + fp)
-                    raise
 
 def label_regions_strain_tab(tab, polys, inplace=False):
     """Assign pixels in a strain table to polygonal regions.
