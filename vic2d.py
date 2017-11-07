@@ -192,13 +192,11 @@ def summarize_strain_field(data):
                    '0.25 quantile': lambda x: x.quantile(.25),
                    '0.75 quantile': lambda x: x.quantile(.75)}
     # Compute summary statistics for each strain component
-    rows = []
+    row = {}
     for c in cols_out:
         for k, fn in fn_from_key.items():
-            rows.append({'component': c,
-                         'statistic': k,
-                         'value': fn(data[c])})
-    return pd.DataFrame(rows)
+            row["{}, {}".format(c, k)] = fn(data[c])
+    return pd.DataFrame([row])
 
 def clip_bbox_to_int(bbox):
     """Convert bounding box to integer values.
