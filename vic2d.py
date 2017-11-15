@@ -181,8 +181,7 @@ def summarize_strain_field(data):
     cols_out = ['exx', 'eyy', '|exy|']
     data['|exy|'] = np.abs(data['exy'])
     # Summary statistic functions
-    fn_from_key = {'n': lambda x: x.count(),
-                   'median': lambda x: x.median(),
+    fn_from_key = {'median': lambda x: x.median(),
                    'mean': lambda x: x.mean(),
                    'sd': lambda x: x.std(),
                    '0.025 quantile': lambda x: x.quantile(.025),
@@ -192,7 +191,9 @@ def summarize_strain_field(data):
                    '0.25 quantile': lambda x: x.quantile(.25),
                    '0.75 quantile': lambda x: x.quantile(.75)}
     # Compute summary statistics for each strain component
-    row = {}
+    row = {'n': np.sum(~pd.isnull(data['exx']))}
+    # ^ Assumption: Each tracked pixel always has all three strain
+    # components defined.
     for c in cols_out:
         for k, fn in fn_from_key.items():
             row["{}, {}".format(c, k)] = fn(data[c])
