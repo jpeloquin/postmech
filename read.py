@@ -1,5 +1,7 @@
 import csv
 import io
+import locale
+from locale import atof
 import os
 from zipfile import ZipFile
 
@@ -116,7 +118,8 @@ def bose_data(fpath):
         data = data.rename(columns = {'Disp': 'Position (m)'})
     return data
 
-def instron_data(fpath):
+
+def instron_data(fpath, locale='en_US.utf8'):
     """Read data from an Instron csv file.
 
     The function expects to find time, extension, and load data.  It
@@ -127,6 +130,12 @@ def instron_data(fpath):
     time, extension, load : numpy array
 
     """
+    # Set locale for reading numbers with thousands-separator.  The
+    # locale used shouldn't be dependent on the computer, but Instron's
+    # csv format doesn't specify the locale.  Since Instron is a US
+    # company we will assume en_US.utf8.
+    locale.setlocale(locale.LC_NUMERIC)
+
     t = []
     d = []
     p = []
@@ -148,9 +157,9 @@ def instron_data(fpath):
         assert units[1] == "(mm)"
         assert units[2] == "(N)"
         for row in reader:
-            t.append(float(row[0]))
-            d.append(float(row[dind]) / 1000) # mm -> m
-            p.append(float(row[pind]))
+            t.append(atof(row[0]))
+            d.append(atof(row[dind]) / 1000) # mm -> m
+            p.append(atof(row[pind]))
     t = np.array(t)
     d = np.array(d)
     p = np.array(p)
