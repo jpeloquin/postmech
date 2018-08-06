@@ -151,8 +151,8 @@ def instron_data(fpath, thousands_sep=','):
         pind = header.index('Load')
         units = reader.__next__() # read units
         assert units[0] == "(s)"
-        assert units[1] == "(mm)"
-        assert units[2] == "(N)"
+        assert units[dind] == "(mm)"
+        assert units[pind] == "(N)"
         for row in reader:
             t.append(float(strip_sep(row[0])))
             d.append(float(strip_sep(row[dind])) / 1000) # mm -> m
