@@ -136,8 +136,10 @@ def instron_data(fpath, thousands_sep=','):
     p = []
     with open(fpath, 'r', newline='') as f:
         reader = csv.reader(f, delimiter=",", quotechar='"')
+        def is_blank(line):
+            return not (line and any(line))
         try:
-            while not reader.__next__() == []:
+            while not is_blank(reader.__next__()):
                 pass
         except StopIteration:
             raise ValueError("Could not find end of header (a blank line) in {}".format(fpath))
