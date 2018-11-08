@@ -1,6 +1,7 @@
 import csv
 import io
 import os
+import warnings
 from zipfile import ZipFile
 
 import pandas as pd
@@ -120,6 +121,8 @@ def bose_data(fpath):
 def instron_data(fpath, thousands_sep=','):
     """Read data from an Instron csv file.
 
+    This function is deprecated; use `instron_rawdata` instead.
+
     The function expects to find time, extension, and load data.  It
     assumes that time is the first column.
 
@@ -128,6 +131,9 @@ def instron_data(fpath, thousands_sep=','):
     time, extension, load : numpy array
 
     """
+    warnings.warn("instron_data is deprecated; use instron_rawdata",
+                  category=DeprecationWarning)
+
     def strip_sep(s):
         return s.replace(thousands_sep, '')
 
@@ -164,3 +170,58 @@ def instron_data(fpath, thousands_sep=','):
                                  'Position (m)': d,
                                  'Load (N)': p})
     return df
+
+
+def instron_rawdata(fpath, thousands_sep=','):
+    """Read a Instron / Bluehill raw data csv file.
+
+    Outputs
+    -------
+    metadata, data
+
+    metadata := a dictionary of metadata keys and values.  For example,
+    metadata["General : Start time"] would return something like "Wed,
+    October 24, 2018 17:38:51".
+
+    data := a pandas table with the test data.  The columns are named in
+    the pattern "Channel (unit)".
+
+    """
+    def strip_sep(s):
+        return s.replace(thousands_sep, '')
+    def is_blank(line):
+        return not (line and any(line))
+    metadata = {}
+    with open(fpath, 'r', newline='') as f:
+        reader = csv.reader(f, delimiter=",", quotechar='"')
+        # Read metadata rows
+        try:
+            # Once we reach a blank line, the metadata block has ended
+            ln = reader.__next__()
+            while not is_blank(ln):
+                k = ln[0].strip()
+                v = ln[1].strip()
+                if len(ln) > 2:
+                    unit = ln[2].strip()
+                    v = float(v) * ureg(unit)
+                metadata[k] = v
+                ln = reader.__next__()
+        except StopIteration:
+            raise ValueError("Could not find end of header (a blank line) in {}".format(fpath))
+        # Read column names for data table
+        header = reader.__next__()
+        # Check that the row we think is the header row really is the
+        # header row
+        assert 'Time' in header
+        # Read units header
+        units = reader.__next__() # read units
+        for i, s in enumerate(header):
+            header[i] = f"{s.strip()} {units[i].strip()}"
+        # Read the actual data
+        data = {header[i]: [] for i in range(len(header))}
+        for row in reader:
+            for i, k in enumerate(header):
+                v = float(strip_sep(row[i]))
+                data[k].append(v)
+    data = pd.DataFrame.from_dict(data)
+    return metadata, data
