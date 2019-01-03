@@ -466,22 +466,32 @@ def plot_vic2d_data(simg, component, gimg=None, scale=None,
     fig.tight_layout()
     return fig
 
-def setup_vic2d(pth, imlist, imarchive, roi_xml=None):
-    """Write a Vic-2D image list to a z2d file with the actual images."""
+def setup_vic2d(pth, imlist, imarchive, z2d_template=None):
+    """Write a Vic-2D image list to a z2d file with the actual images.
+
+    imarchive := ZipFile object of image archive.
+
+    z2d_template := path to a .z2d file to use as a template.  The ROI
+    and seed point location defined in the template will be preserved.
+
+    """
     # Make sure the output directory exists
     d, f = os.path.split(pth)
     fname, ext = os.path.splitext(f)
-    dir_images = os.path.join(d, fname)
+    dir_images = os.path.join(d, f"{fname}_images")
+    # ^ images in imlist will be copied here
     if not os.path.exists(dir_images):
         os.makedirs(dir_images)
-    if roi_xml is not None:
+    if z2d_template is not None:
         # Write the z2d file to the output directory
-        xml = replace_imlist_z2dxml(roi_xml,
-            [os.path.join(fname, i) for i in imlist])
+        with ZipFile(z2d_template, 'r').open('project.xml') as f:
+            template = f.read()
+        xml = replace_imlist_z2dxml(template, [os.path.join(fname, i)
+                                               for i in imlist])
         with ZipFile(os.path.join(d, fname + '.z2d'), 'w') as f:
             f.writestr('project.xml', xml)
     # Write the image list to the output directory
-    with open(os.path.join(d, fname + '.txt'), 'w') as f:
+    with open(os.path.join(d, f"{fname}_images.txt"), 'w') as f:
         for ln in imlist:
             f.write(fname + '/' + ln + '\n')
     # Write the images to the output directory
