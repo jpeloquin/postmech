@@ -486,7 +486,7 @@ def setup_vic2d(pth, imlist, imarchive, z2d_template=None):
         # Write the z2d file to the output directory
         with ZipFile(z2d_template, 'r').open('project.xml') as f:
             template = f.read()
-        xml = replace_imlist_z2dxml(template, [os.path.join(fname, i)
+        xml = replace_imlist_z2dxml(template, [os.path.join(f"{fname}_images", i)
                                                for i in imlist])
         with ZipFile(os.path.join(d, fname + '.z2d'), 'w') as f:
             f.writestr('project.xml', xml)
