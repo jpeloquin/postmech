@@ -49,20 +49,21 @@ def read_csv(f):
     has to read the file twice and is slower than it should be.
 
     """
-    if type(f) is str:
+    if isinstance(f, str):
         pth = f
-        with open(pth) as f:
+        with open(pth, 'rb') as f:
             s = f.read()
     else:
         pth = f.name
         s = f.read()
-    # To handle multi-ROI csv files, split string on '\n\n'.  The file
-    # is always terminated with '\n\n', so the last item in the split is
-    # always blank.
-    sections = s.split('\n\n')[:-1]
+    # To handle multi-ROI csv files, split bytes on '\n\n'.  The file is
+    # always terminated with '\n\n', so the last item in the split is
+    # always blank.  We work in bytes and defer to read_table and pandas
+    # to handle encoding.
+    sections = s.split(b'\n\n')[:-1]
     if len(sections) == 0:
         warnings.warn("{} has zero rows of data.".format(pth))
-    tables = [read_table(StringIO(x)) for x in sections]
+    tables = [read_table(BytesIO(x)) for x in sections]
     return tables
 
 def read_table(f):
