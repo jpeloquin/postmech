@@ -299,7 +299,7 @@ def img(df, col, shp):
     # Note: Vic-2D indexes x and y from 0
     i = np.empty(shp)
     i.fill(np.nan)
-    i[[df['y'], df['x']]] = df[col]
+    i[(df['y'], df['x'])] = df[col]
     return i
 
 def read_strain_components(pth):
