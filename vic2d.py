@@ -500,6 +500,34 @@ def setup_vic2d(pth, imlist, imarchive, z2d_template=None):
         with open(os.path.join(dir_images, nm), 'wb') as f:
             f.write(imarchive.read(nm))
 
+
+def tracked_mask(tab, size):
+    """Return boolean image mask of tracked pixels
+
+    tab := data table of a Vic-2D export file
+
+    """
+    mask = np.full((size[1], size[0]), False)
+    mask[(tab['y'], tab['x'])] = True
+    return mask
+
+
+def count_tracked(pth, size):
+    """Return image mask where each pixel = # frames pixel was tracked.
+
+    pth := path of the zipped Vic-2D data export
+
+    size := (width, height) of images analyzed by Vic-2D
+
+    """
+    count = np.zeros((size[1], size[0]), dtype='int')
+    with ZipFile(pth) as f:
+        for nm in f.namelist():
+            tab = pd.concat(mechana.vic2d.read_csv(f.open(nm)))
+            count = count + tracked_mask(tab, size).astype('int')
+    return count
+
+
 def replace_imlist_z2dxml(xml, imlist):
     """Replace the <files> tag in Vic-2D XML with a new image list.
 
