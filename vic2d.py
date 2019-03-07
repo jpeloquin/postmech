@@ -42,19 +42,26 @@ def listcsvs(directory):
 def read_csv(f):
     """Return list of data tables from a Vic-2D csv file.
 
-    f := str or file-like buffer.  A str is treated as a file path.
+    f := str or file-like buffer.  A str is treated as a file path.  A
+    bytes object is treated as raw data.
 
     This function supports multi-ROI csv files.  Because Vic-2D
     implements multi-ROI csv files in an inconvenient way, read_table
     has to read the file twice and is slower than it should be.
 
     """
-    if isinstance(f, str):
-        pth = f
+    if isinstance(f, bytes):
+        name = "bytes array"
+        s = f
+    elif isinstance(f, str):
+        name = f
         with open(pth, 'rb') as f:
             s = f.read()
     else:
-        pth = f.name
+        # Primarily meant for zipfile.ZipExtFile. For example,
+        # with ZipFile("filename.zip") as f:
+        #    read_csv(f.open("filename_in_zip")
+        name = f.name
         s = f.read()
     # To handle multi-ROI csv files, split bytes on '\n\n'.  The file is
     # always terminated with '\n\n', so the last item in the split is
@@ -62,7 +69,7 @@ def read_csv(f):
     # to handle encoding.
     sections = s.split(b'\n\n')[:-1]
     if len(sections) == 0:
-        warnings.warn("{} has zero rows of data.".format(pth))
+        warnings.warn("{} has zero rows of data.".format(name))
     tables = [read_table(BytesIO(x)) for x in sections]
     return tables
 
