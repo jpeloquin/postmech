@@ -104,8 +104,6 @@ def _roi(roi):
         l = e_int.text.split(" ")
         d['interior'] = [(int(l[i]), int(l[i+1]))
                          for i in range(0, len(l), 2)]
-    else:
-        d['interior'] = None
     return d
 
 def read_z2d(pth):
