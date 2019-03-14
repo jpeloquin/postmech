@@ -83,8 +83,13 @@ def read_table(f):
     return df
 
 def _roi(roi):
-    """Return ROI data from xml aoi element."""
-    d = {}
+    """Return ROI data from XML AOI element (Vic-2D 2009)."""
+    # Initialize ROI dictionary
+    d = {"type": "polygon",
+         "subset size": None,
+         "spacing": None,
+         "exterior": [],
+         "interior": []}
     d['type'] = roi.get('type')
     d['subset size'] = int(roi.get('subsetsize'))
     d['spacing'] = int(roi.get('spacing'))
@@ -109,7 +114,20 @@ def read_z2d(pth):
     with ZipFile(pth, 'r').open('project.xml') as f:
         root = ET.parse(f)
         # Get ROIs
+        # (a) Get ROI from <aoi> tag (Vic-2D 2009)
         data['rois'] = [_roi(x) for x in root.findall('projectaois/aoi')]
+        # (b) Get ROI from <aoinode> tag (Vic-2D 6)
+        for aoi_tag in root.findall('projectaois/aoinode'):
+            # Does not handle interior cuts or non-polygonal AOIs yet
+            roi = {"type": "polygon",
+                   "subset size": int(aoi_tag.find("polygonmask/polygon").get("subsetsize")),
+                   "spacing": int(aoi_tag.find("polygonmask/polygon").get("stepsize")),
+                   "exterior": [],
+                   "interior": []}
+            pts = [int(p) for p in aoi_tag.find("polygonmask/polygon/outline").text.split()]
+            roi["exterior"] = [(pts[i], pts[i+1])
+                               for i in range(0, len(pts), 2)]
+            data["rois"].append(roi)
         # Get image list
         data['images'] = [x.text for x in root.find('files').getchildren()
                           if x.tag in set(['reference', 'deformed'])]
