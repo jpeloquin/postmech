@@ -41,7 +41,7 @@ def decode_impath(pth):
     m = re.search(pattern, s)
     d = {'Camera ID': m.group('cam_id'),
          'Frame ID': m.group('frame_id'),
-         'Timestamp [s]': float(m.group('time'))}
+         'Time [s]': float(m.group('time'))}
     return d
 
 def image_id(fpath):
@@ -88,8 +88,8 @@ def tabulate_images(imdir, mech_data_file=None, vic2d_dir=None):
     t_frame0 = t_frame0.nominal_value
     timestamp0 = image_time(imindex["ref_time"])
 
-    t = tab_frames['Timestamp [s]'].astype('float') - timestamp0 + t_frame0
-    tab_frames['Time [s]'] = t
+    tab_frames['Time [s]'] = (tab_frames['Time [s]'].astype('float')
+                              - timestamp0 + t_frame0)
 
     ## Add corresponding stress & strain values
     if mech_data_file is not None:
@@ -109,7 +109,7 @@ def tabulate_images(imdir, mech_data_file=None, vic2d_dir=None):
         tab_v2d = pd.DataFrame([decode_impath(a) for a in vic2d_files])
         pths = [os.path.join(vic2d_dir, p) for p in vic2d_files]
         tab_v2d['Vic-2D File'] = pths
-        tab_v2d = tab_v2d.drop('Timestamp [s]', 1)
+        tab_v2d = tab_v2d.drop('Time [s]', 1)
         tab_frames = pd.merge(tab_frames, tab_v2d, how='left',
                               on=['Camera ID', 'Frame ID'])
     else:

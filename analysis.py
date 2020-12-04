@@ -84,7 +84,7 @@ class MechanicalTest(object):
             csvnames = (os.path.basename(f) for f in vic2dfiles)
             fieldtimes = [mechana.images.image_time(nm)
                           for nm in csvnames]
-            t = float(self.tab_images.iloc[0]['Timestamp [s]'])
+            t = float(self.tab_images.iloc[0]['Time [s]'])
             self.image_t0 = t - self.tab_images.iloc[0]['Time [s]']
             self.fieldtimes = np.array(fieldtimes) - self.image_t0
 
@@ -138,7 +138,7 @@ class MechanicalTest(object):
         impath = self.imagepaths[idx]
         imname = "cam{}_{}_{:.3f}".format(r['Camera ID'],
                                           r['Frame ID'],
-                                          r['Timestamp [s]'])
+                                          r['Time [s]'])
         image = mpimg.imread(impath)
 
         mdata = {}
