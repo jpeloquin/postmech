@@ -301,9 +301,6 @@ def mask_from_poly(poly, shape):
     the polygon mask should be drawn.
 
     """
-    if poly is None:
-        return np.ones(shape, dtype=bool)
-
     if not hasattr(poly, '__iter__'):
         # Single polygon, not MultiPolygon or list of polygons.  Make it
         # a list so we can use a common execution path.
