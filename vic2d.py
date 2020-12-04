@@ -23,10 +23,9 @@ from lxml import etree as ET
 import mechana
 from mechana.unit import ureg
 from mechana.images import image_id
-from lbplt.colormaps import choose_cmap, cdict_div
+from lbplt.colormaps import choose_cmap, cmap_div
 
-mpl.cm.register_cmap(name="lab_diverging",
-                     data=cdict_div, lut=256)
+mpl.cm.register_cmap("lab_diverging", cmap_div)
 
 def listcsvs(directory):
     """List csv files in a directory.
