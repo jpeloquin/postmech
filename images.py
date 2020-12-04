@@ -41,7 +41,7 @@ def decode_impath(pth):
     m = re.search(pattern, s)
     d = {'Camera ID': m.group('cam_id'),
          'Frame ID': m.group('frame_id'),
-         'Timestamp (s)': float(m.group('time'))}
+         'Timestamp [s]': float(m.group('time'))}
     return d
 
 def image_id(fpath):
@@ -58,7 +58,7 @@ def tabulate_images(imdir, mech_data_file=None, vic2d_dir=None):
 
     mech_data_file := Path to mechanical data table.  This can be a
     raw data file or a file with stress and strain; it just needs to
-    have a 'Time (s)' column that can be matched with the image
+    have a 'Time [s]' column that can be matched with the image
     timestamps.  =ref_time.csv= and =image_index.csv= (both in the
     image directory) will be used to match this time to the frame
     timestamps.
@@ -88,15 +88,15 @@ def tabulate_images(imdir, mech_data_file=None, vic2d_dir=None):
     t_frame0 = t_frame0.nominal_value
     timestamp0 = image_time(imindex["ref_time"])
 
-    t = tab_frames['Timestamp (s)'].astype('float') - timestamp0 + t_frame0
-    tab_frames['Time (s)'] = t
+    t = tab_frames['Timestamp [s]'].astype('float') - timestamp0 + t_frame0
+    tab_frames['Time [s]'] = t
 
     ## Add corresponding stress & strain values
     if mech_data_file is not None:
         mech_data = pd.read_csv(mech_data_file)
-        for col in set(mech_data.columns) - set(["Time (s)"]):
-            tab_frames[col] = np.interp(tab_frames['Time (s)'],
-                                        mech_data['Time (s)'],
+        for col in set(mech_data.columns) - set(["Time [s]"]):
+            tab_frames[col] = np.interp(tab_frames['Time [s]'],
+                                        mech_data['Time [s]'],
                                         mech_data[col])
 
     ## Add paths to vic-2d files
@@ -109,7 +109,7 @@ def tabulate_images(imdir, mech_data_file=None, vic2d_dir=None):
         tab_v2d = pd.DataFrame([decode_impath(a) for a in vic2d_files])
         pths = [os.path.join(vic2d_dir, p) for p in vic2d_files]
         tab_v2d['Vic-2D File'] = pths
-        tab_v2d = tab_v2d.drop('Timestamp (s)', 1)
+        tab_v2d = tab_v2d.drop('Timestamp [s]', 1)
         tab_frames = pd.merge(tab_frames, tab_v2d, how='left',
                               on=['Camera ID', 'Frame ID'])
     else:

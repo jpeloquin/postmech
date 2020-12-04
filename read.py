@@ -107,14 +107,14 @@ def bose_data(fpath):
     data = pd.DataFrame.from_dict(data)
 
     # Rename columns and check units
-    data = data.rename(columns = {'Elapsed Time': 'Time (s)'})
+    data = data.rename(columns = {'Elapsed Time': 'Time [s]'})
     if "Load" in columns:
         assert units[columns.index("Load")] == "N"
-        data = data.rename(columns = {'Load': 'Load (N)'})
+        data = data.rename(columns = {'Load': 'Load [N]'})
     if "Disp" in columns:
         assert units[columns.index("Disp")] == "mm"
         data["Disp"] = data["Disp"] / 1000
-        data = data.rename(columns = {'Disp': 'Position (m)'})
+        data = data.rename(columns = {'Disp': 'Position [m]'})
     return data
 
 
@@ -156,9 +156,9 @@ def instron_data(fpath, thousands_sep=','):
         dind = header.index('Extension')
         pind = header.index('Load')
         units = reader.__next__() # read units
-        assert units[0] == "(s)"
-        assert units[dind] == "(mm)"
-        assert units[pind] == "(N)"
+        assert units[0] == "[s]"
+        assert units[dind] == "[mm]"
+        assert units[pind] == "[N]"
         for row in reader:
             t.append(float(strip_sep(row[0])))
             d.append(float(strip_sep(row[dind])) / 1000) # mm -> m
@@ -166,9 +166,9 @@ def instron_data(fpath, thousands_sep=','):
     t = np.array(t)
     d = np.array(d)
     p = np.array(p)
-    df = pd.DataFrame.from_dict({'Time (s)': t,
-                                 'Position (m)': d,
-                                 'Load (N)': p})
+    df = pd.DataFrame.from_dict({'Time [s]': t,
+                                 'Position [m]': d,
+                                 'Load [N]': p})
     return df
 
 
@@ -214,9 +214,9 @@ def instron_rawdata(fpath, thousands_sep=','):
         # header row
         assert 'Time' in header
         # Read units header
-        units = reader.__next__() # read units
+        units = [s.strip().lstrip("('").rstrip(")'") for s in reader.__next__()]
         for i, s in enumerate(header):
-            header[i] = f"{s.strip()} {units[i].strip()}"
+            header[i] = f"{s.strip()} [{units[i]}]"
         # Read the actual data
         data = {header[i]: [] for i in range(len(header))}
         for row in reader:
