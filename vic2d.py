@@ -315,14 +315,20 @@ def transform_image(img, basis, order=3):
     # Return to standard image convention
     return img_transf.swapaxes(0, 1)
 
-def img(df, col, shp):
+def img(tab, col, size):
     """Convert a column in a Vic-2D csv export to an image.
+
+    tab := DataFrame
+
+    col = := Column name in DataFrame to plot as an image.
+
+    size := (# pixels in x, # pixels in y)
 
     """
     # Note: Vic-2D indexes x and y from 0
-    i = np.empty(shp)
+    i = np.empty((size[1], size[0]))
     i.fill(np.nan)
-    i[(df['y'], df['x'])] = df[col]
+    i[(tab['y'], tab['x'])] = tab[col]
     return i
 
 def read_strain_components(pth):
