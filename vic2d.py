@@ -495,10 +495,10 @@ def plot_vic2d_data(simg, component, gimg=None, scale=None,
     fig.tight_layout()
     return fig
 
-def setup_vic2d(pth, imlist, imarchive, z2d_template=None):
+def setup_vic2d(pth, imlist, p_images, z2d_template=None):
     """Write a Vic-2D image list to a z2d file with the actual images.
 
-    imarchive := ZipFile object of image archive.
+    p_images := path to image archive (zip).
 
     z2d_template := path to a .z2d file to use as a template.  The ROI
     and seed point location defined in the template will be preserved.
@@ -524,9 +524,10 @@ def setup_vic2d(pth, imlist, imarchive, z2d_template=None):
         for ln in imlist:
             f.write(fname + '/' + ln + '\n')
     # Write the images to the output directory
-    for nm in imlist:
-        with open(os.path.join(dir_images, nm), 'wb') as f:
-            f.write(imarchive.read(nm))
+    with ZipFile(p_images) as imarchive:
+        for nm in imlist:
+            with open(os.path.join(dir_images, nm), 'wb') as f:
+                f.write(imarchive.read(nm))
 
 
 def tracked_mask(tab, size):
