@@ -522,7 +522,7 @@ def setup_vic2d(pth, imlist, p_images, z2d_template=None):
     # Write the image list to the output directory
     with open(os.path.join(d, f"{fname}_images.txt"), 'w') as f:
         for ln in imlist:
-            f.write(fname + '/' + ln + '\n')
+            f.write(f"{fname}_images" + '/' + ln + '\n')
     # Write the images to the output directory
     with ZipFile(p_images) as imarchive:
         for nm in imlist:
