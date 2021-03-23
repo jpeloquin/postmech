@@ -68,53 +68,76 @@ def bose_data(fpath):
     """Read a text data file exported by Wintest.
 
     Ideally, all units are converted to mks.  Currently, this is only
-    implemented for displacements in mm, as time and load are mks by
-    default.
+    implemented for displacements in mm, as Wintest exports time and
+    load as mks by default.
 
-    Note: Wintest terminates the first line of the file with a null
-    byte, so these data files are not strictly plain text.
+    Note: Wintest may terminate the first line of the file (which has
+    the as-exported filename) with a null byte, so these data files are
+    not strictly plain text.
 
     """
     def parseline(s):
-        l = s.split(",")[:-1]
-        l = [s[1:-1].strip() for s in l]
+        # These files use a trailing comma
+        l = [cell.strip(" \"") for cell in s.rstrip("\r\n ,").split(",")]
         return l
 
-    # Read the file
+    dtype = {"Scan": int,
+             "Points": int}
+    # ^ everything else is float
+
+    mks_unit = {"Sec": "s"}
+
+     # Read the file
     with open(fpath, 'r', newline='') as f:
         lines = f.readlines()
 
-    # Find header row and units
-    header_row = None
-    for i in range(5):
+    # Find header row and units.  The header row will start with
+    # "Points" if Points were exported, and (probably) "Elapsed Time"
+    # otherwise.
+    headerlike_text = ["Points", "Elapsed Time"]
+    nsearch = 100
+    for i in range(nsearch):
         line = parseline(lines[i])
-        if len(line) > 0 and line[0] == "Elapsed Time":
+        if len(line) > 0 and line[0] in headerlike_text:
             header_row = i
             break
-    if header_row is None:
-        raise Exception("No header row found in first 6 lines of "
-                        + fpath)
-    columns = parseline(lines[header_row])
-    units = parseline(lines[header_row + 1])
+    else:
+        raise Exception(f"No header row found in first {nsearch} lines of {fpath}")
+    exported_vars = parseline(lines[header_row])
+    columns = ["Scan"] + exported_vars
+    units = {"Scan": "1",
+             "Points": "1"}
+    units_cells = parseline(lines[header_row + 1])
+    for var, unit in zip(exported_vars, units_cells):
+        if var in units:
+            continue
+        units[var] = mks_unit.get(unit, unit)
 
     # Read data, skipping blank lines
     data = dict(zip(columns, [list() for a in columns]))
-    for i in range(header_row + 2, len(lines)):
+    i = header_row + 2
+    scan = 0
+    scan_istart = 0
+    while i < len(lines):
         line = parseline(lines[i])
+        if line[0] in headerlike_text:
+            scan += 1
+            scan_istart = i + 2
+            i += 2
+            continue
         if len(line) > 0:
-            for k, v in zip(columns, line):
-                data[k].append(float(v))
+            data["Scan"].append(scan)
+            for k, v in zip(exported_vars, line):
+                data[k].append(dtype.get("k", float)(v))
+        i += 1
     data = pd.DataFrame.from_dict(data)
 
-    # Rename columns and check units
-    data = data.rename(columns = {'Elapsed Time': 'Time [s]'})
-    if "Load" in columns:
-        assert units[columns.index("Load")] == "N"
-        data = data.rename(columns = {'Load': 'Load [N]'})
-    if "Disp" in columns:
-        assert units[columns.index("Disp")] == "mm"
-        data["Disp"] = data["Disp"] / 1000
-        data = data.rename(columns = {'Disp': 'Position [m]'})
+
+    # Add units to column names
+    std_varname = {"Elapsed Time": "Time",
+                   "Disp": "Position"}
+    newnames = {c: f"{std_varname.get(c, c)} [{units[c]}]" for c in columns}
+    data = data.rename(columns = newnames)
     return data
 
 
