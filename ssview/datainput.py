@@ -1,7 +1,7 @@
 import numpy as np
 import pyqtgraph as pg
 
-from mechana.analysis import MechanicalTest
+from postmech.analysis import MechanicalTest
 from render import render_strain
 
 def debug_trace():

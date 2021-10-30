@@ -20,12 +20,12 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 from lxml import etree as ET
 
-import mechana
-from mechana.unit import ureg
-from mechana.images import image_id
-from lbplt.colormaps import choose_cmap, cmap_div
+from .unit import ureg
+from .images import image_id
+from lbplt.colormaps import choose_cmap, cdict_div
 
-mpl.cm.register_cmap("lab_diverging", cmap_div)
+mpl.cm.register_cmap(name="lab_diverging",
+                     data=cdict_div, lut=256)
 
 def listcsvs(directory):
     """List csv files in a directory.
@@ -179,7 +179,7 @@ def summarize_vic2d(vicdir, imdir):
     q50 = {k: [] for k in fields}
     strain = []
     keys = []
-    vdset = mechana.vic2d.Vic2DDataset(vicdir)
+    vdset = Vic2DDataset(vicdir)
     for k in vdset.keys:
         df = vdset[k]
         keys.append(k)
@@ -314,20 +314,14 @@ def transform_image(img, basis, order=3):
     # Return to standard image convention
     return img_transf.swapaxes(0, 1)
 
-def img(tab, col, size):
+def img(df, col, shp):
     """Convert a column in a Vic-2D csv export to an image.
-
-    tab := DataFrame
-
-    col = := Column name in DataFrame to plot as an image.
-
-    size := (# pixels in x, # pixels in y)
 
     """
     # Note: Vic-2D indexes x and y from 0
-    i = np.empty((size[1], size[0]))
+    i = np.empty(shp)
     i.fill(np.nan)
-    i[(tab['y'], tab['x'])] = tab[col]
+    i[(df['y'], df['x'])] = df[col]
     return i
 
 def read_strain_components(pth):
@@ -338,9 +332,9 @@ def read_strain_components(pth):
     if len(table) != 0:
         bbox = [np.min(table['x'].values), np.max(table['x'].values),
                 np.min(table['y'].values), np.max(table['y'].values)]
-        exx, ext = mechana.vic2d.strainimg(table, 'exx', bbox)
-        eyy, ext = mechana.vic2d.strainimg(table, 'eyy', bbox)
-        exy, ext = mechana.vic2d.strainimg(table, 'exy', bbox)
+        exx, ext = strainimg(table, 'exx', bbox)
+        eyy, ext = strainimg(table, 'eyy', bbox)
+        exy, ext = strainimg(table, 'exy', bbox)
     else:
         exx = []
         eyy = []
@@ -354,7 +348,7 @@ def plot_strains(csvpath):
     """Return three-panel strain fields figure from a Vic-2D .csv file.
 
     """
-    df = mechana.vic2d.readv2dcsv(csvpath)
+    df = readv2dcsv(csvpath)
 
     # Find extent of region that has values
     xmin = min(df['x'])
@@ -495,10 +489,10 @@ def plot_vic2d_data(simg, component, gimg=None, scale=None,
     fig.tight_layout()
     return fig
 
-def setup_vic2d(pth, imlist, p_images, z2d_template=None):
+def setup_vic2d(pth, imlist, imarchive, z2d_template=None):
     """Write a Vic-2D image list to a z2d file with the actual images.
 
-    p_images := path to image archive (zip).
+    imarchive := ZipFile object of image archive.
 
     z2d_template := path to a .z2d file to use as a template.  The ROI
     and seed point location defined in the template will be preserved.
@@ -522,12 +516,11 @@ def setup_vic2d(pth, imlist, p_images, z2d_template=None):
     # Write the image list to the output directory
     with open(os.path.join(d, f"{fname}_images.txt"), 'w') as f:
         for ln in imlist:
-            f.write(f"{fname}_images" + '/' + ln + '\n')
+            f.write(fname + '/' + ln + '\n')
     # Write the images to the output directory
-    with ZipFile(p_images) as imarchive:
-        for nm in imlist:
-            with open(os.path.join(dir_images, nm), 'wb') as f:
-                f.write(imarchive.read(nm))
+    for nm in imlist:
+        with open(os.path.join(dir_images, nm), 'wb') as f:
+            f.write(imarchive.read(nm))
 
 
 def tracked_mask(tab, size):
@@ -552,7 +545,7 @@ def count_tracked(pth, size):
     count = np.zeros((size[1], size[0]), dtype='int')
     with ZipFile(pth) as f:
         for nm in f.namelist():
-            tab = pd.concat(mechana.vic2d.read_csv(f.open(nm)))
+            tab = pd.concat(read_csv(f.open(nm)))
             count = count + tracked_mask(tab, size).astype('int')
     return count
 

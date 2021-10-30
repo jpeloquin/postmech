@@ -122,7 +122,7 @@
   <customwidget>
    <class>MarkerPlotWidget</class>
    <extends>QGraphicsView</extends>
-   <header>mechana.ssview.data_gui</header>
+   <header>postmech.ssview.data_gui</header>
   </customwidget>
  </customwidgets>
  <resources/>

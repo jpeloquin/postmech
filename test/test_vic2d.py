@@ -3,7 +3,7 @@ import os
 import unittest
 
 import numpy as np
-from mechana.vic2d import *
+from postmech.vic2d import read_z2d
 
 fixture_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)),
                            "fixtures")

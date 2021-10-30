@@ -15,11 +15,11 @@ import matplotlib as mpl
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 
-import mechana
 import pygismo as gismo
+from . import vic2d
+from . import read
 from .unit import ureg
-from .images import decode_impath, read_image_index, tabulate_images
-from .vic2d import read_strain_components
+from .images import decode_impath, image_id, image_time, list_images, read_image_index, tabulate_images
 from .write import try_unlock_on_fail
 
 class MechanicalTest(object):
@@ -51,28 +51,28 @@ class MechanicalTest(object):
             data = pd.read_csv(ssfile)
             self.stress = data['Stress (Pa)'].values
             self.stretch = data['Stretch Ratio'].values
-            self.time = data['Time [s]'].values
+            self.time = data['Time (s)'].values
         # Read images
         self.imagepaths = imagelist
         if self.imagepaths is not None:
             imdir = os.path.dirname(self.imagepaths[0])
-            self.tab_images = mechana.images.tabulate_images(imdir,
+            self.tab_images = tabulate_images(imdir,
                 vic2d_dir=dir_vic2d)
             # Image times
-            self.imagetimes = self.tab_images['Time [s]']
+            self.imagetimes = self.tab_images['Time (s)']
             # Image lookup table
-            imageids = [mechana.images.image_id(f)
+            imageids = [image_id(f)
                         for f in self.imagepaths]
             self.imagedict = dict(zip(imageids, self.imagepaths))
 
         # Read strain fields
         if dir_vic2d is not None:
             # Read strain components from Vic-2D csv files
-            vic2dfiles = mechana.vic2d.listcsvs(dir_vic2d)
+            vic2dfiles = vic2d.listcsvs(dir_vic2d)
 
             ncpu = multiprocessing.cpu_count()
             p = multiprocessing.Pool(ncpu)
-            self.strainfields = p.map(read_strain_components,
+            self.strainfields = p.map(vic2d.read_strain_components,
                                       vic2dfiles)
             p.close()
             p.join()
@@ -82,10 +82,10 @@ class MechanicalTest(object):
                                  if len(a['exx']) != 0]
 
             csvnames = (os.path.basename(f) for f in vic2dfiles)
-            fieldtimes = [mechana.images.image_time(nm)
+            fieldtimes = [image_time(nm)
                           for nm in csvnames]
-            t = float(self.tab_images.iloc[0]['Time [s]'])
-            self.image_t0 = t - self.tab_images.iloc[0]['Time [s]']
+            t = float(self.tab_images.iloc[0]['Timestamp (s)'])
+            self.image_t0 = t - self.tab_images.iloc[0]['Time (s)']
             self.fieldtimes = np.array(fieldtimes) - self.image_t0
 
     @classmethod
@@ -93,7 +93,7 @@ class MechanicalTest(object):
         """Initialize from a json test record.
 
         The record format is the same as that output by
-        mechana.organize.write_test_file.
+        postmech.organize.write_test_file.
 
         """
         datadir = os.path.dirname(pth_json)
@@ -138,7 +138,7 @@ class MechanicalTest(object):
         impath = self.imagepaths[idx]
         imname = "cam{}_{}_{:.3f}".format(r['Camera ID'],
                                           r['Frame ID'],
-                                          r['Time [s]'])
+                                          r['Timestamp (s)'])
         image = mpimg.imread(impath)
 
         mdata = {}
@@ -199,16 +199,15 @@ def key_stress_pts(test):
     df = pd.read_csv(test.stress_strain_file)
     # Get image data
     imlist = [os.path.basename(s)
-              for s in mechana.images.list_images(test.image_dir)]
-    imindex = mechana.images.read_image_index(
+              for s in list_images(test.image_dir)]
+    imindex = read_image_index(
         os.path.join(test.image_measurements_dir, "image_index.csv"))
-    imtime0 = mechana.images.image_time(imindex['ref_time'])
+    imtime0 = image_time(imindex['ref_time'])
     with open(os.path.join(test.image_measurements_dir, "ref_time.csv")) as f:
         reader = csv.reader(f)
         reftime = float(reader.__next__()[0])
     d = imtime0 - reftime
-    imtimes = [mechana.images.image_time(nm) - d
-               for nm in imlist]
+    imtimes = [image_time(nm) - d for nm in imlist]
 
     # Allocate output
     out = {}
@@ -217,7 +216,7 @@ def key_stress_pts(test):
     peak_stress = df['Stress (Pa)'].max()
     idx_peak = df.idxmax()['Stress (Pa)']
     out['peak stress'] = next(nm for nm, t in zip(imlist, imtimes)
-                              if t > df['Time [s]'][idx_peak])
+                              if t > df['Time (s)'][idx_peak])
 
     # Residual stress
     resfrac = [0.01, 0.02, 0.05][::-1]
@@ -236,7 +235,7 @@ def key_stress_pts(test):
 
         # find index of corresponding image (nearest following time)
         if idx_res[-1] is not None:
-            tc = df['Time [s]'][idx_res[-1]]
+            tc = df['Time (s)'][idx_res[-1]]
             imname = next((nm for t, nm in zip(imtimes, imlist)
                            if t > tc),
                           None)
@@ -302,11 +301,11 @@ def tabulate_stress_strain(spcdir, data, areapath, lengthpath,
         imdir = os.path.join(spcdir, "images")
 
     # Read area
-    area = mechana.read.measurement_csv(areapath)
+    area = read.measurement_csv(areapath)
     area = area.to('m**2')
 
     # Read reference length
-    ref_length = mechana.read.measurement_csv(lengthpath)
+    ref_length = read.measurement_csv(lengthpath)
     ref_length = ref_length.to('m')
 
     # Calculate stretch and stress
@@ -317,7 +316,7 @@ def tabulate_stress_strain(spcdir, data, areapath, lengthpath,
                  - data['Position (m)'][0]))
     data['Stretch Ratio'] = length / ref_length.value.magnitude
     # Stress
-    data['Stress (Pa)'] = data['Load [N]'] / area.value.magnitude
+    data['Stress (Pa)'] = data['Load (N)'] / area.value.magnitude
 
     return data
 
@@ -373,8 +372,8 @@ def ramp_data(test):
     image_tab = tabulate_images(test.image_dir,
                                 test.stress_strain_file,
                                 test.vic2d_dir)
-    t0 = image_tab.loc[image_tab['Frame ID'] == frame0]['Time [s]'].values[0]
-    out = data[data['Time [s]'] >= t0]
+    t0 = image_tab.loc[image_tab['Frame ID'] == frame0]['time (s)'].values[0]
+    out = data[data['Time (s)'] >= t0]
     return out
 
 def calculate_area(tab):

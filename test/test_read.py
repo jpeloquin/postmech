@@ -1,6 +1,7 @@
 import unittest, os
-import mechana
 import numpy.testing as npt
+
+from postmech import read
 
 class BoseTxtTestTimed(unittest.TestCase):
 
@@ -8,7 +9,7 @@ class BoseTxtTestTimed(unittest.TestCase):
                          "fixtures", "bose_export.TXT")
 
     def test_bose_data(self):
-        data = mechana.read.bose_data(self.fpath)
+        data = read.bose_data(self.fpath)
         assert len(data.columns) == 4
         npt.assert_almost_equal(data["Time [s]"].iat[9], 0.045)
         npt.assert_almost_equal(data["Position [m]"].iat[-1],
@@ -21,7 +22,7 @@ class BoseTxtTestBlock(unittest.TestCase):
                          "fixtures", "bose_export_block.TXT")
 
     def test_bose_data(self):
-        data = mechana.read.bose_data(self.fpath)
+        data = read.bose_data(self.fpath)
         assert len(data.columns) == 3
         assert sum(data['Position [m]'].isnull()) == 0
         assert sum(data['Time [s]'].isnull()) == 0

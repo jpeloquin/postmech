@@ -8,9 +8,8 @@ from PIL import Image, ImageDraw
 
 from uncertainties import ufloat
 
-import mechana
-from mechana import instron
-from mechana.unit import ureg
+from . import instron, read
+from .unit import ureg
 
 def lowercase_colname(s):
     m = re.search(r'\s\(\S+\)$', s)
@@ -84,7 +83,7 @@ def tabulate_images(imdir, mech_data_file=None, vic2d_dir=None):
     tab_frames = pd.DataFrame([a for a in map(decode_impath, image_list)])
 
     ## Compute frame times from the perspective of the test clock
-    t_frame0 = mechana.read.measurement_csv(os.path.join(p_imdata, 'ref_time.csv'))
+    t_frame0 = read.measurement_csv(os.path.join(p_imdata, 'ref_time.csv'))
     t_frame0 = t_frame0.nominal_value
     timestamp0 = image_time(imindex["ref_time"])
 
@@ -143,7 +142,7 @@ def from_px(fpath, scale):
     scale := (value, sd)
 
     """
-    d = mechana.read.measurement_csv(fpath)
+    d = read.measurement_csv(fpath)
     mm_d =  d * scale
     return mm_d
 
@@ -262,7 +261,7 @@ def make_vic2d_lists(p_imindex, d_images, p_mech_data,
         imlist = archive.namelist()
     else:
         imlist = [os.path.relpath(f, d_images)
-                  for f in mechana.images.list_images(d_images)]
+                  for f in list_images(d_images)]
 
     tab_frames = tabulate_images(d_images, p_mech_data)
 

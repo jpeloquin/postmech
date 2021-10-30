@@ -1,4 +1,4 @@
-from mechana.images import decode_impath
+from postmech.images import decode_impath
 
 def test_decode_impath_tiff():
     pth = 'cam0_12345_10.1.tiff'

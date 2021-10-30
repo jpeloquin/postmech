@@ -6,10 +6,8 @@ from zipfile import ZipFile
 
 import pandas as pd
 import numpy as np
-from pint import UnitRegistry
 
-import mechana
-from mechana.unit import ureg
+from .unit import ureg
 
 def open_archive_file(pth, mode='rt'):
     """Return a file object for a path that may include a .zip file.

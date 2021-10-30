@@ -1,10 +1,4 @@
-#!/usr/bin/env python
-
-import argparse
-import os
-import csv
 import numpy as np
-import mechana
 
 def stretch_ratio(d, l0):
     return (d + l0) / l0
