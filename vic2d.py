@@ -22,10 +22,8 @@ from lxml import etree as ET
 
 from .unit import ureg
 from .images import image_id
-from lbplt.colormaps import choose_cmap, cdict_div
+from lbplt.colormaps import choose_cmap, cmap_div
 
-mpl.cm.register_cmap(name="lab_diverging",
-                     data=cdict_div, lut=256)
 
 def listcsvs(directory):
     """List csv files in a directory.
@@ -384,7 +382,7 @@ def plot_strains(csvpath):
         else:
             extend = 'neither'
 
-        implot = ax.imshow(im, cmap="lab_diverging",
+        implot = ax.imshow(im, cmap=cmap_div,
                            vmin=-extremum, vmax=extremum)
 
         ## Format axis

@@ -79,6 +79,12 @@ def bose_data(fpath):
         l = [cell.strip(" \"") for cell in s.rstrip("\r\n ,").split(",")]
         return l
 
+    def is_blank(line):
+        if len(line.strip()) == 0:
+            return True
+        else:
+            return False
+
     dtype = {"Scan": int,
              "Points": int}
     # ^ everything else is float
@@ -117,6 +123,9 @@ def bose_data(fpath):
     scan = 0
     scan_istart = 0
     while i < len(lines):
+        if is_blank(lines[i]):
+            i += 1
+            continue
         line = parseline(lines[i])
         if line[0] in headerlike_text:
             scan += 1
@@ -126,7 +135,7 @@ def bose_data(fpath):
         if len(line) > 0:
             data["Scan"].append(scan)
             for k, v in zip(exported_vars, line):
-                data[k].append(dtype.get("k", float)(v))
+                data[k].append(dtype.get(k, float)(v))
         i += 1
     data = pd.DataFrame.from_dict(data)
 
