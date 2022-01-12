@@ -15,7 +15,6 @@ import matplotlib as mpl
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 
-import pygismo as gismo
 from . import vic2d
 from . import read
 from .unit import ureg
@@ -377,7 +376,8 @@ def ramp_data(test):
     return out
 
 def calculate_area(tab):
-    areas = gismo.area_by_pass(tab)
+    import pygismo
+    areas = ppygismo.area_by_pass(tab)
     area = areas.mean() * ureg('mm**2')
     area = area.plus_minus(areas.std())
     area = area.to('m**2')
