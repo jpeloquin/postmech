@@ -219,23 +219,36 @@ def instron_rawdata(fpath, thousands_sep=','):
     """
     def strip_sep(s):
         return s.replace(thousands_sep, '')
-    def is_blank(line):
-        return not (line and any(line))
+    def strip_line(line):
+        """Remove trailing blank entries from line and strip leading and trailing
+        whitespace from each remaining entry"""
+        i = len(line)
+        for e in reversed(line):
+            s = e.strip()
+            if s:
+                return [a.strip() for a in line[:i]]
+            else:
+                i -= 1
     metadata = {}
     with open(fpath, 'r', newline='') as f:
         reader = csv.reader(f, delimiter=",", quotechar='"')
         # Read metadata rows
         try:
-            # Once we reach a blank line, the metadata block has ended
-            ln = reader.__next__()
-            while not is_blank(ln):
-                k = ln[0].strip()
-                v = ln[1].strip()
+            # Remove trailing blank entries.  Bluehill will not generate these,
+            # but if a user re-saves a Bluehill CSV file the spreadsheet software
+            # will make all rows have the same number of columns, and there doesn't
+            # seem to be any particular need to be picky.
+            while True:
+                ln = strip_line(reader.__next__())
+                if not ln:
+                    # Once we reach a blank line, the metadata block has ended
+                    break
+                k = ln[0]
+                v = ln[1]
                 if len(ln) > 2:
                     unit = ln[2].strip()
                     v = float(v) * ureg(unit)
                 metadata[k] = v
-                ln = reader.__next__()
         except StopIteration:
             raise ValueError("Could not find end of header (a blank line) in {}".format(fpath))
         # Read column names for data table
