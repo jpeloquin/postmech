@@ -20,16 +20,22 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-tagid = {k: i for i, k in ExifTags.TAGS.items()}
 strfmt_iso8601 = "%Y-%m-%dT%l%M%S%z"
 for p in args.files:
     im = Image.open(p)
     exif = {ExifTags.TAGS[k]: v for k, v in im.getexif().items() if k in ExifTags.TAGS}
-    if not "DateTimeOriginal" in exif:
-        raise ValueError(f"{p} has no 'DateTimeOriginal' EXIF tag.")
-    # The strptime format might vary from camera to camera.  This works
-    # with a Canon PowerShot ELPH 300 HS.
-    t = datetime.strptime(exif["DateTimeOriginal"], "%Y:%m:%d %H:%M:%S")
+    time_tags = ["DateTimeOriginal", "EXIF DateTimeOriginal", "DateTime"]
+    for k in time_tags:
+        try:
+            s_time = exif[k]
+            break
+        except KeyError:
+            continue
+    else:
+        raise ValueError(f"{p} has none of the following EXIF tags: {', '.join(time_tags)}")
+    # The strptime format might vary from camera to camera.  This works with a Canon
+    # PowerShot ELPH 300 HS.
+    t = datetime.strptime(s_time, "%Y:%m:%d %H:%M:%S")
     prefix = t.isoformat().replace(":", "")
     # ^ ISO 8601 time basic format because Windows can't cope with :
     src = Path(p)
