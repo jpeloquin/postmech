@@ -19,6 +19,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 from lxml import etree as ET
+from shapely.geometry import Point
 
 from .unit import ureg
 from .images import image_id
@@ -36,6 +37,7 @@ def listcsvs(directory):
     files = [os.path.join(directory, f) for f in files]
     return sorted(list(files))
 
+
 def read_csv(f):
     """Return list of data tables from a Vic-2D csv file.
 
@@ -52,7 +54,7 @@ def read_csv(f):
         s = f
     elif isinstance(f, str):
         name = f
-        with open(pth, 'rb') as f:
+        with open(name, 'rb') as f:
             s = f.read()
     else:
         # Primarily meant for zipfile.ZipExtFile. For example,
@@ -149,11 +151,11 @@ def label_regions_strain_tab(tab, polys, inplace=False):
         poly = polys[region]
         poly = shapely.prepared.prep(poly)
         bb = polys[region].bounds
-        m = np.logical_and.reduce([tab_strain['x'] > bb[0],
-                                   tab_strain['x'] < bb[2],
-                                   tab_strain['y'] > bb[1],
-                                   tab_strain['y'] < bb[3]])
-        idx = [i for i, r in tab_strain[m].iterrows()
+        m = np.logical_and.reduce([tab['x'] > bb[0],
+                                   tab['x'] < bb[2],
+                                   tab['y'] > bb[1],
+                                   tab['y'] < bb[3]])
+        idx = [i for i, r in tab[m].iterrows()
                if poly.contains(Point((r['x'], r['y'])))]
         tab.loc[idx, 'region'] = region
     return tab
