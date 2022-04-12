@@ -1,9 +1,11 @@
 import os, re, sys, csv
 from os.path import join as pjoin
+from pathlib import Path
 from zipfile import ZipFile
 
 import numpy as np
 import pandas as pd
+from pandas import DataFrame
 from PIL import Image, ImageDraw
 
 from uncertainties import ufloat
@@ -52,7 +54,31 @@ def image_id(fpath):
     m = re.search(pattern, s)
     return m.group('key')
 
-def tabulate_images(imdir, mech_data_file=None, vic2d_dir=None):
+
+def list_images(pth):
+    """Return list of image file names in a directory or zip archive"""
+    pth = Path(pth)
+    if pth.suffix == ".zip":
+        with ZipFile(pth) as archive:
+            imlist = archive.namelist()
+    else:
+        files = os.listdir(pth)
+        pattern = r'cam[0-9]_[0-9]+_[0-9]+.[0-9]{3}.tiff'
+        imlist = [f for f in files
+                 if re.match(pattern, f) is not None]
+    return sorted(imlist)
+
+
+def tabulate_images(pth):
+    """Return table of images in a directory or zip archive"""
+    imlist = list_images(pth)
+    iminfo = [decode_impath(nm) for nm in imlist]
+    tab = DataFrame(iminfo)
+    tab["Name"] = imlist
+    return tab
+
+
+def tabulate_images_and_mechdata(imdir, mech_data_file=None, vic2d_dir=None):
     """Return a table with data mapped to each image frame.
 
     mech_data_file := Path to mechanical data table.  This can be a
@@ -169,16 +195,6 @@ def read_image_index(fpath):
             image_index[row[0]] = row[1]
     return image_index
 
-def list_images(directory):
-    """List image files in a directory.
-
-    """
-    files = sorted(os.listdir(directory))
-    pattern = r'cam0_[0-9]+_[0-9]+.[0-9]{3}.tiff'
-    files = [f for f in files
-             if re.match(pattern, f) is not None]
-    files = [os.path.join(directory, f) for f in files]
-    return sorted(list(files))
 
 def get_image_list(fpath):
     """Returns list of images and which test phase they belong to.
