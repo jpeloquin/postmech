@@ -247,7 +247,7 @@ def instron_rawdata(fpath, thousands_sep=','):
                 v = ln[1]
                 if len(ln) > 2:
                     unit = ln[2].strip()
-                    v = float(v) * ureg(unit)
+                    v = float(strip_sep(v)) * ureg(unit)
                 metadata[k] = v
         except StopIteration:
             raise ValueError("Could not find end of header (a blank line) in {}".format(fpath))
