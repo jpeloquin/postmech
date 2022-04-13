@@ -8,10 +8,11 @@ from typing import Dict, Iterable, List, Optional, Tuple, Union
 from zipfile import ZipFile
 
 import numpy as np
+from numpy.typing import NDArray
 from pandas import DataFrame
 from PIL import Image, ImageDraw
 from pathos.multiprocessing import ProcessPool
-from scipy.io import loadmat
+from scipy.io import loadmat, savemat
 
 from .images import get_frame_size
 from .util import clean_dir, ensure_dir
@@ -32,6 +33,15 @@ def read_affine(pth: Union[str, Path]):
     )
     affine = np.linalg.inv(affine)
     return affine
+
+
+def write_affine(affine: NDArray, pth: Union[str, Path]):
+    serialized = np.hstack([affine[:-1, :-1].ravel(), affine[:-1, -1]])
+    mat = {
+        "AffineTransform_double_2_2": np.atleast_2d(serialized).T,
+        "fixed": np.zeros(affine.shape[0] - 1, 1),
+    }
+    savemat(pth, mat)
 
 
 def register(
