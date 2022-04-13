@@ -34,25 +34,48 @@ def read_affine(pth: Union[str, Path]):
 
 
 def register(
-    reference,
-    deformed,
+    fixed,
+    moving,
     ref_mask,
     dir_out,
+    parameters,
     initial_affine=None,
-    transform="Rigid",
-    metric="GC",
     verbose=False,
     env={},
 ):
+    """Register two images using ANTs
+
+    :param fixed: Path to fixed (reference) image.
+
+    :param moving: Path moving (deformed) image.
+
+    :param ref_mask: Mask marking which pixels to consider in registration (value =
+    1) or ignore (value = 0).  The mask is appplied to the fixed (reference) image.
+
+    :param dir_out: Directory to which to write ANTs files.  If it does not exist,
+    it will be created.
+
+    :param parameters: Comma-delimited list of parameters (strings) that will be
+    passed to the the ANTs call via `subprocess`.  Its primary use is to control the
+    ANTs registration stages using `--transform`, `--metric`, `--convergence`,
+    `--shrink-factors`, and `--smothing-sigmas`.  :func:`register` will add the other
+    required parameters automatically.  In the `--metric` parameter, write `{fixed}`
+    in place of the fixed image path, and write `{moving}` in place of the moving
+    image path.
+
+    :param initial_affine: (Optional) Path to affine file (ITK .mat format),
+    which will be used to initialize the moving → fixed image registration.  The
+    affine therefore is interpreted as a transformation from moving image
+    /coordinates/ to fixed image coordinates.
+
+    """
     dir_out = Path(dir_out)
     if not dir_out.exists():
         dir_out.mkdir()
     # Get frame IDs
-    ref_name = str(Path(reference).with_suffix("").name)
-    def_name = str(Path(deformed).with_suffix("").name)
+    ref_name = str(Path(fixed).with_suffix("").name)
+    def_name = str(Path(moving).with_suffix("").name)
     # Put ANTs on PATH
-    antspath = os.getenv("ANTSPATH")
-
     env = {k: str(v) for k, v in env.items()}
     if "ANTSPATH" not in env:
         if os.getenv("ANTSPATH") is None:
@@ -68,18 +91,14 @@ def register(
         "--collapse-output-transforms",
         "--masks", f"{ref_mask}",
     ]
+    # fmt: on
     if initial_affine is not None:
         cmd += ["--initial-moving-transform", str(initial_affine)]
-    cmd += [
-        "--use-histogram-matching",
-        "--transform", f"{transform}[0.1]",
-        "--metric", f"{metric}[{deformed},{reference},1.0]",
-        "--convergence", "[300x300x200,1e-6,10]",
-        "--shrink-factors", "4x2x1",
-        "--smoothing-sigmas", "1x1x0vox",
-        "-o", f"{dir_out}/{ref_name}_to_{def_name}_",
-    ]
-    # fmt: on
+    for c in parameters:
+        c = c.replace("{fixed}", str(fixed))
+        c = c.replace("{moving}", str(moving))
+        cmd.append(c)
+    cmd += ["-o", f"{dir_out}/{ref_name}_to_{def_name}_"]
     if verbose:
         cmd += ["--verbose"]
     subprocess.run(cmd, env=env, cwd=os.getcwd(), check=True)
@@ -102,7 +121,7 @@ def plot_roi(img: Union[str, Path, Image.Image], vertices, center):
     return img
 
 
-def track_ROI(archive, frames: List[str], roi_pts, workdir, id_, **kwargs):
+def track_ROI(archive, frames: List[str], roi_pts, workdir, cmd, id_, **kwargs):
     """Track an ROI through a list of frames
 
     kwargs are passed directly to `register()`.
@@ -131,9 +150,10 @@ def track_ROI(archive, frames: List[str], roi_pts, workdir, id_, **kwargs):
         with ZipFile(archive) as a:
             with open(p_def, "wb") as f:
                 f.write(a.read(frame))
-        p_affine, cmd = register(p_ref, p_def, p_mask, dir_affines, affine, **kwargs)
-        logf.write(" ".join([shlex.quote(c) for c in cmd]) + "\n")
-        vertices, center = transformed_roi(roi_pts, affine=read_affine(p_affine))
+        p_affine, cmd_out = register(p_ref, p_def, p_mask, dir_affines, cmd, affine, **kwargs)
+        logf.write(" ".join([shlex.quote(c) for c in cmd_out]) + "\n")
+        pts_affine = np.linalg.inv(read_affine(p_affine))
+        vertices, center = transformed_roi(roi_pts, affine=pts_affine)
         img = plot_roi(p_def, vertices, center)
         img.save(dir_tracks / frame)
         info = {
@@ -160,6 +180,7 @@ def track_ROIs(
     frames: List[str],
     rois: Dict[str, List[Tuple]],
     workdir,
+    cmd,
     sid,
     nproc: Optional[int] = None,
     **kwargs,
@@ -171,7 +192,7 @@ def track_ROIs(
     """
     def process_roi(roi):
         nm, pts = roi
-        info = track_ROI(archive, frames, pts, workdir, f"{sid}_-_ROI={nm}", **kwargs)
+        info = track_ROI(archive, frames, pts, workdir, cmd, f"{sid}_-_ROI={nm}", **kwargs)
         info = info.rename({"ROI centroid": f"{nm} centroid"}, axis=1)
         return info
     if nproc is None:
