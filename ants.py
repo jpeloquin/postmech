@@ -13,6 +13,7 @@ from PIL import Image, ImageDraw
 from pathos.multiprocessing import ProcessPool
 from scipy.io import loadmat
 
+from .images import get_frame_size
 from .util import clean_dir, ensure_dir
 
 
@@ -127,30 +128,36 @@ def track_ROI(archive, frames: List[str], roi_pts, workdir, cmd, id_, **kwargs):
     kwargs are passed directly to `register()`.
 
     """
+    archive = Path(archive)
     workdir = Path(workdir)
-    # Open one image so we can read image size
-    with ZipFile(archive) as a:
-        size = Image.open(io.BytesIO(a.read(frames[0]))).size
+    size = get_frame_size(archive)
     roi_mask = make_mask(roi_pts, size)
     p_mask = workdir / f"{id_}_-_mask.tiff"
     roi_mask.save(p_mask)
     # Copy the images
-    dir_images = clean_dir(workdir / f"{id_}_-_images")
+    if archive.is_dir():
+        # Re-use the existing image directory
+        dir_images = archive
+    elif archive.suffix == ".zip":
+        # Extract the needed images
+        dir_images = clean_dir(workdir / f"{id_}_-_images")
+        with ZipFile(archive) as a:
+            for frame in frames:
+                with open(dir_images / frame, "wb") as f:
+                    f.write(a.read(frame))
+    else:
+        raise ValueError("Image archive must be a zip file or a directory.")
     dir_affines = clean_dir(workdir / f"{id_}_-_affines")
     dir_tracks = clean_dir(workdir / f"{id_}_-_tracks")
     p_log = workdir / f"{id_}_-_commands.log"
     # Run the registrations
     p_ref = dir_images / frames[0]
-    with ZipFile(archive) as a:
-        with open(p_ref, "wb") as f:
-            f.write(a.read(frames[0]))
 
     def process_frame(frame, logf, affine):
         p_def = dir_images / frame
-        with ZipFile(archive) as a:
-            with open(p_def, "wb") as f:
-                f.write(a.read(frame))
-        p_affine, cmd_out = register(p_ref, p_def, p_mask, dir_affines, cmd, affine, **kwargs)
+        p_affine, cmd_out = register(
+            p_ref, p_def, p_mask, dir_affines, cmd, affine, **kwargs
+        )
         logf.write(" ".join([shlex.quote(c) for c in cmd_out]) + "\n")
         pts_affine = np.linalg.inv(read_affine(p_affine))
         vertices, center = transformed_roi(roi_pts, affine=pts_affine)
@@ -190,11 +197,25 @@ def track_ROIs(
     kwargs are passed directly to register().
 
     """
+    archive = Path(archive)
+    # Extract images from zip archive once up-front, if necessary
+    if archive.suffix == ".zip":
+        dir_images = clean_dir(workdir / f"{sid}_-_images")
+        with ZipFile(archive) as a:
+            for frame in frames:
+                with open(dir_images / frame, "wb") as f:
+                    f.write(a.read(frame))
+    else:
+        dir_images = archive
+
     def process_roi(roi):
         nm, pts = roi
-        info = track_ROI(archive, frames, pts, workdir, cmd, f"{sid}_-_ROI={nm}", **kwargs)
+        info = track_ROI(
+            dir_images, frames, pts, workdir, cmd, f"{sid}_-_ROI={nm}", **kwargs
+        )
         info = info.rename({"ROI centroid": f"{nm} centroid"}, axis=1)
         return info
+
     if nproc is None:
         tracks = list(map(process_roi, rois.items()))
     else:
@@ -208,9 +229,8 @@ def track_ROIs(
     all_tracks.reset_index(inplace=True)
     # Plot all ROI tracks together
     dir_tracks = clean_dir(workdir / f"{sid}_-_all_ROI_tracks")
-    for i in range(len(all_tracks)):
-        with ZipFile(archive) as a:
-            img = Image.open(io.BytesIO(a.read(all_tracks["Name"].iloc[i])))
+    for i, frame in enumerate(frames):
+        img = Image.open(dir_images / frame)
         for k, roi in rois.items():
             p_affine = workdir / all_tracks["Affine"].iloc[i]
             if p_affine is None:

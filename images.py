@@ -1,3 +1,4 @@
+import io
 import os, re, sys, csv
 from os.path import join as pjoin
 from pathlib import Path
@@ -44,6 +45,25 @@ def decode_impath(pth):
          'Frame ID': m.group('frame_id'),
          'Time [s]': float(m.group('time'))}
     return d
+
+
+def get_frame_size(archive):
+    """Return frame size of images in image archive"""
+    archive = Path(archive)
+    if archive.is_dir():
+        for p in archive.iterdir():
+            if p.suffix == ".tiff":
+                image = Image.open(p)
+                break
+        else:
+            raise ValueError("No .tiff files found in image archive directory.")
+    elif archive.suffix == ".zip":
+        with ZipFile(archive) as a:
+            image = Image.open(io.BytesIO(a.read(a.namelist()[0])))
+    else:
+        raise ValueError("Image archive must be a zip file or a directory.")
+    return image.size
+
 
 def image_id(fpath):
     """Convert image name into a unique id.
