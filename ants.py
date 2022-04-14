@@ -193,7 +193,18 @@ def track_ROI(
         }
         return info
 
-    info = []
+    # Add reference frame entry to frame info table
+    affine = np.eye(3)
+    p_affine = dir_affines / f"{frames[0]}_to_{frames[0]}_0GenericAffine.mat"
+    write_affine(affine, p_affine)
+    verts, center = transformed_roi(roi_pts, affine)
+    info = [{
+        "Name": frames[0],
+        "Image": str((dir_images / frames[0]).relative_to(workdir)),
+        "Affine": str(p_affine.relative_to(workdir)),
+        "ROI centroid": center,
+        }]
+    # Add all registration data to frame info table
     with open(p_log, "w", encoding="utf-8", buffering=1) as logf:
         affine = None
         for frame in frames[1:]:
