@@ -84,8 +84,8 @@ def register(
     if not dir_out.exists():
         dir_out.mkdir()
     # Get frame IDs
-    ref_name = str(Path(fixed).with_suffix("").name)
-    def_name = str(Path(moving).with_suffix("").name)
+    fixed_name = str(Path(fixed).with_suffix("").name)
+    moving_name = str(Path(moving).with_suffix("").name)
     # Put ANTs on PATH
     env = {k: str(v) for k, v in env.items()}
     if "ANTSPATH" not in env:
@@ -109,11 +109,11 @@ def register(
         c = c.replace("{fixed}", str(fixed))
         c = c.replace("{moving}", str(moving))
         cmd.append(c)
-    cmd += ["-o", f"{dir_out}/{ref_name}_to_{def_name}_"]
+    cmd += ["-o", f"{dir_out}/{moving_name}_to_{fixed_name}_"]
     if verbose:
         cmd += ["--verbose"]
     subprocess.run(cmd, env=env, cwd=os.getcwd(), check=True)
-    p = f"{dir_out}/{ref_name}_to_{def_name}_0GenericAffine.mat"
+    p = f"{dir_out}/{moving_name}_to_{fixed_name}_0GenericAffine.mat"
     return p, cmd
 
 
