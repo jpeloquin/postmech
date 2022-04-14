@@ -39,7 +39,7 @@ def write_affine(affine: NDArray, pth: Union[str, Path]):
     serialized = np.hstack([affine[:-1, :-1].ravel(), affine[:-1, -1]])
     mat = {
         "AffineTransform_double_2_2": np.atleast_2d(serialized).T,
-        "fixed": np.zeros(affine.shape[0] - 1, 1),
+        "fixed": np.zeros((affine.shape[0] - 1, 1)),
     }
     savemat(pth, mat)
 
