@@ -132,7 +132,16 @@ def plot_roi(img: Union[str, Path, Image.Image], vertices, center):
     return img
 
 
-def track_ROI(archive, frames: List[str], roi_pts, workdir, cmd, id_, **kwargs):
+def track_ROI(
+    archive,
+    frames: List[str],
+    roi_pts,
+    workdir,
+    cmd,
+    id_,
+    exclusion_mask: Optional[Union[str, Path]] = None,
+    **kwargs,
+):
     """Track an ROI through a list of frames
 
     kwargs are passed directly to `register()`.
@@ -141,9 +150,12 @@ def track_ROI(archive, frames: List[str], roi_pts, workdir, cmd, id_, **kwargs):
     archive = Path(archive)
     workdir = Path(workdir)
     size = get_frame_size(archive)
-    roi_mask = make_mask(roi_pts, size)
+    mask = make_mask(roi_pts, size)
+    if exclusion_mask is not None:
+        exclusion_mask = Image.open(exclusion_mask).convert("L")
+        mask.paste(Image.new("L", size, 0), mask=exclusion_mask)
     p_mask = workdir / f"{id_}_-_mask.tiff"
-    roi_mask.save(p_mask)
+    mask.save(p_mask)
     # Copy the images
     if archive.is_dir():
         # Re-use the existing image directory
@@ -199,6 +211,7 @@ def track_ROIs(
     workdir,
     cmd,
     sid,
+    exclusion_mask: Optional[Union[str, Path]] = None,
     nproc: Optional[int] = None,
     **kwargs,
 ):
@@ -221,7 +234,14 @@ def track_ROIs(
     def process_roi(roi):
         nm, pts = roi
         info = track_ROI(
-            dir_images, frames, pts, workdir, cmd, f"{sid}_-_ROI={nm}", **kwargs
+            dir_images,
+            frames,
+            pts,
+            workdir,
+            cmd,
+            f"{sid}_-_ROI={nm}",
+            exclusion_mask,
+            **kwargs,
         )
         info = info.rename({"ROI centroid": f"{nm} centroid"}, axis=1)
         return info
