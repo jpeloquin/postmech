@@ -195,7 +195,8 @@ def track_ROI(
 
     # Add reference frame entry to frame info table
     affine = np.eye(3)
-    p_affine = dir_affines / f"{frames[0]}_to_{frames[0]}_0GenericAffine.mat"
+    fixed_name = str(Path(frames[0]).with_suffix("").name)
+    p_affine = dir_affines / f"{fixed_name}_to_{fixed_name}_0GenericAffine.mat"
     write_affine(affine, p_affine)
     verts, center = transformed_roi(roi_pts, affine)
     info = [
