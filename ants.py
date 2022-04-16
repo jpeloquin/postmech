@@ -277,7 +277,7 @@ def track_ROIs(
             if p_affine is None:
                 affine = None
             else:
-                affine = read_affine(p_affine)
+                affine = np.linalg.inv(read_affine(p_affine))
             img = plot_roi(img, *transformed_roi(roi, affine))
         img.save(dir_tracks / all_tracks["Name"].iloc[i])
     return all_tracks
