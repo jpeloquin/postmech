@@ -198,12 +198,14 @@ def track_ROI(
     p_affine = dir_affines / f"{frames[0]}_to_{frames[0]}_0GenericAffine.mat"
     write_affine(affine, p_affine)
     verts, center = transformed_roi(roi_pts, affine)
-    info = [{
-        "Name": frames[0],
-        "Image": str((dir_images / frames[0]).relative_to(workdir)),
-        "Affine": str(p_affine.relative_to(workdir)),
-        "ROI centroid": center,
-        }]
+    info = [
+        {
+            "Name": frames[0],
+            "Image": str((dir_images / frames[0]).relative_to(workdir)),
+            "Affine": str(p_affine.relative_to(workdir)),
+            "ROI centroid": center,
+        }
+    ]
     # Add all registration data to frame info table
     with open(p_log, "w", encoding="utf-8", buffering=1) as logf:
         affine = None
@@ -255,6 +257,7 @@ def track_ROIs(
             **kwargs,
         )
         info = info.rename({"ROI centroid": f"{nm} centroid"}, axis=1)
+        info = info.rename({"Affine": f"{nm} affine"}, axis=1)
         return info
 
     if nproc is None:
@@ -265,7 +268,9 @@ def track_ROIs(
     # Tabulate all ROI tracks together
     all_tracks = tracks[0].set_index("Name")
     for t in tracks[1:]:
-        col = [c for c in t.columns if c.endswith("centroid")][0]
+        col = [
+            c for c in t.columns if (c.endswith("centroid") or c.endswith("affine"))
+        ][0]
         all_tracks = all_tracks.join(t.set_index("Name")[[col]])
     all_tracks.reset_index(inplace=True)
     # Plot all ROI tracks together
@@ -273,7 +278,7 @@ def track_ROIs(
     for i, frame in enumerate(frames):
         img = Image.open(dir_images / frame)
         for k, roi in rois.items():
-            p_affine = workdir / all_tracks["Affine"].iloc[i]
+            p_affine = workdir / all_tracks[f"{k} affine"].iloc[i]
             if p_affine is None:
                 affine = None
             else:
