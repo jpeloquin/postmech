@@ -1,4 +1,3 @@
-import io
 from numbers import Number
 import os
 from pathlib import Path
