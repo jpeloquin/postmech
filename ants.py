@@ -9,6 +9,7 @@ from zipfile import ZipFile
 
 import numpy as np
 from numpy.typing import NDArray
+import pandas as pd
 from pandas import DataFrame
 from PIL import Image, ImageDraw
 from pathos.multiprocessing import ProcessPool
@@ -150,6 +151,16 @@ def plot_roi_tracks(
             A = np.linalg.inv(read_affine(affines[k][i]))
             img = plot_roi(img, *transformed_roi(roi, A))
         img.save(dir_out / imname)
+
+
+def read_roi_tracks(p):
+    """Read ROI tracks .csv with ROI centroid positions as Numpy arrays"""
+    tab = pd.read_csv(p, index_col=0)
+    for c in tab.columns:
+        if not c.endswith("centroid"):
+            continue
+        tab[c] = list(map(lambda s: np.fromstring(s[1:-1], sep=" "), tab[c]))
+    return tab
 
 
 def track_ROI(
