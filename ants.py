@@ -302,8 +302,8 @@ def track_ROIs(
     for t in tracks[1:]:
         col = [
             c for c in t.columns if (c.endswith("centroid") or c.endswith("affine"))
-        ][0]
-        all_tracks = all_tracks.join(t.set_index("Name")[[col]])
+        ]
+        all_tracks = all_tracks.join(t.set_index("Name")[col])
     all_tracks.reset_index(inplace=True)
     # Plot all ROI tracks together
     affines = {
