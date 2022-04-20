@@ -137,7 +137,6 @@ def plot_roi_tracks(
     rois: Dict,
     affines: Dict,
     dir_out: Union[str, Path],
-    names: Optional[Iterable[str]] = None,
 ):
     """Plot tracks of one or more ROIs onto images"""
     dir_out = ensure_dir(Path(dir_out))
