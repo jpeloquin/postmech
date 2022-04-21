@@ -154,7 +154,7 @@ def plot_roi_tracks(
 
 def read_roi_tracks(p):
     """Read ROI tracks .csv with ROI centroid positions as Numpy arrays"""
-    tab = pd.read_csv(p, index_col=0)
+    tab = pd.read_csv(p)
     for c in tab.columns:
         if not c.endswith("centroid"):
             continue
