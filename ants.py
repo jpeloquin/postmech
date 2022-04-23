@@ -229,7 +229,8 @@ def track_ROI(
     fixed_name = str(Path(frames[0]).with_suffix("").name)
     p_affine = dir_affines / f"{fixed_name}_to_{fixed_name}_0GenericAffine.mat"
     write_affine(affine, p_affine)
-    verts, center = transformed_roi(roi_pts, affine)
+    vertices, center = transformed_roi(roi_pts, affine)
+    plot_roi(dir_images / frames[0], vertices, center).save(dir_tracks / frames[0])
     info = [
         {
             "Name": frames[0],
