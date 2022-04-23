@@ -178,6 +178,7 @@ def track_ROI(
 
     """
     archive = Path(archive)
+    frames = [Path(f).name for f in frames]
     workdir = Path(workdir)
     size = get_frame_size(archive)
     mask = make_mask(roi_pts, size)
