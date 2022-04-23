@@ -217,7 +217,7 @@ def track_ROI(
         img.save(dir_tracks / frame)
         info = {
             "Name": frame,
-            "Image": str((dir_images / frame).relative_to(workdir)),
+            "Image": os.path.relpath(dir_images / frame, workdir),
             "Affine": str(Path(p_affine).relative_to(workdir)),
             "ROI centroid": center,
         }
@@ -232,7 +232,7 @@ def track_ROI(
     info = [
         {
             "Name": frames[0],
-            "Image": str((dir_images / frames[0]).relative_to(workdir)),
+            "Image": os.path.relpath(dir_images / frames[0], workdir),
             "Affine": str(p_affine.relative_to(workdir)),
             "ROI centroid": center,
         }
