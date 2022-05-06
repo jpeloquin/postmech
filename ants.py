@@ -10,7 +10,7 @@ import numpy as np
 from numpy.typing import NDArray
 import pandas as pd
 from pandas import DataFrame
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 from pathos.multiprocessing import ProcessPool
 from scipy.io import loadmat, savemat
 
@@ -117,7 +117,7 @@ def register(
     return p, cmd
 
 
-def plot_roi(img: Union[str, Path, Image.Image], vertices, center):
+def plot_roi(img: Union[str, Path, Image.Image], vertices, center, name=None):
     """Plot ROI pts on an image
 
     Note that if an image object is provided, it will be modified.
@@ -129,6 +129,10 @@ def plot_roi(img: Union[str, Path, Image.Image], vertices, center):
     artist.polygon([(x, y) for x, y, *_ in vertices], fill=None, outline="white")
     artist.line(((center[0] - 3, center[1]), (center[0] + 3, center[1])), fill="white")
     artist.line(((center[0], center[1] - 3), (center[0], center[1] + 3)), fill="white")
+    if name is not None:
+        fnt = ImageFont.truetype("Arial.ttf", 16)
+        color = (255, 255, 255, 255) if img.mode == "RGB" else 255
+        artist.text(center, name, font=fnt, fill=color)
     return img
 
 
@@ -269,12 +273,15 @@ def track_ROIs(
     archive = Path(archive)
     # Extract images from zip archive once up-front, if necessary
     if archive.suffix == ".zip":
+        # Images are in a .zip archive
         dir_images = clean_dir(workdir / f"{sid}_-_images")
         with ZipFile(archive) as a:
             for frame in frames:
                 with open(dir_images / frame, "wb") as f:
                     f.write(a.read(frame))
     else:
+        # Assume images are already in a plain directory (other archive types are not
+        # supported)
         dir_images = archive
 
     def process_roi(roi):
@@ -293,6 +300,12 @@ def track_ROIs(
         info = info.rename({"Affine": f"{nm} affine"}, axis=1)
         return info
 
+    # Plot all ROIs, with labels, in reference frame
+    roi_label_img = Image.open(dir_images / frames[0])
+    for nm, pts in rois.items():
+        plot_roi(roi_label_img, pts, np.mean(pts, axis=0), nm)
+    roi_label_img.save(workdir / f"{sid}_-_all_ROIs_labeled.png")
+    # Track all ROIs in turn
     if nproc is None:
         tracks = list(map(process_roi, rois.items()))
     else:
