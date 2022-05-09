@@ -2,6 +2,7 @@ import json
 import os
 from os.path import join as pjoin
 import logging
+
 logger = logging.getLogger(__name__)
 from zipfile import ZipFile
 
@@ -10,10 +11,9 @@ import pandas as pd
 
 from .images import list_images
 
-class Test:
-    """Find and store paths of test data files from test records.
 
-    """
+class Test:
+    """Find and store paths of test data files from test records."""
 
     def __init__(self, project_dir):
         self.project_dir = project_dir
@@ -35,19 +35,20 @@ class Test:
         self.record = row
 
         ## Primary data folder for test
-        if not pd.isnull(row['ramp to failure folder']):
-            self.test_dir = os.path.join(project_dir, 'data',
-                                         row['ramp to failure folder'])
+        if not pd.isnull(row["ramp to failure folder"]):
+            self.test_dir = os.path.join(
+                project_dir, "data", row["ramp to failure folder"]
+            )
 
         ## Images and image-derived measurements (for tests with images)
-        if not pd.isnull(row['image directory']):
-            p_images = os.path.join(project_dir, 'data', row['image directory'])
+        if not pd.isnull(row["image directory"]):
+            p_images = os.path.join(project_dir, "data", row["image directory"])
 
             # If the test uses a .zip image archive, inflate it and set
             # the image directory to the inflated directory.  We need
             # unzipped copies of the images.  Lots of code relies on the
             # images existing as individual files.
-            if p_images.endswith('.zip'):
+            if p_images.endswith(".zip"):
                 self.image_archive = p_images
                 self.image_dir = p_images[:-4]
                 need_unzip = False
@@ -66,28 +67,29 @@ class Test:
             self.image_paths = list_images(self.image_dir)
 
             # Find the directory with image-derived measurements
-            d = pjoin(self.test_dir, 'image_measurements')
+            d = pjoin(self.test_dir, "image_measurements")
             if os.path.exists(d):
                 self.image_measurements_dir = d
 
         ## Vic-2d directory
-        if not pd.isnull(row['vic-2d export folder']):
-            self.vic2d_dir = os.path.join(project_dir,
-                                          row['vic-2d export folder'])
+        if not pd.isnull(row["vic-2d export folder"]):
+            self.vic2d_dir = os.path.join(project_dir, row["vic-2d export folder"])
 
         ## Stress and strain data file
         if self.test_dir is not None:
-            self.stress_strain_file = os.path.join(self.test_dir,
-                                                   'stress_strain.csv')
+            self.stress_strain_file = os.path.join(self.test_dir, "stress_strain.csv")
             if not os.path.exists(self.stress_strain_file):
                 self.stress_strain_file = None
-                print("Warning: {} test {} has no stress_strain.csv "
-                      "file.".format(row['specimen id'], row['test id']))
+                print(
+                    "Warning: {} test {} has no stress_strain.csv "
+                    "file.".format(row["specimen id"], row["test id"])
+                )
 
         return self
 
     def __getitem__(self, key):
         return self.record[key]
+
 
 def meniscus_cr_basis(s_c, s_r):
     """Return parsed circumferential-radial basis vectors from table.
@@ -115,10 +117,12 @@ def meniscus_cr_basis(s_c, s_r):
     corresponding row of `basis` is signed; 0 if not.
 
     """
+
     def v_from_s(s):
-        signed = {'u': False, '[': True}[s[0]]
+        signed = {"u": False, "[": True}[s[0]]
         v = np.array(json.loads(s.lstrip("u")))
         return v, signed
+
     vectors = []
     signed = []
     for v, d in map(v_from_s, [s_c, s_r]):
@@ -126,10 +130,11 @@ def meniscus_cr_basis(s_c, s_r):
         signed.append(d)
     return np.array(vectors), np.array(signed)
 
+
 def test_signature(spc_id, test_id):
     """Return unique identifying string for a test."""
-    if pd.isnull(test_id) or test_id == 'NA':
-        test_id = 'NA'
+    if pd.isnull(test_id) or test_id == "NA":
+        test_id = "NA"
     else:
         test_id = int(test_id)
     s = "{}_test_{}".format(spc_id, test_id)

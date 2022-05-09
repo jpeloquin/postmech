@@ -14,14 +14,16 @@ from uncertainties import ufloat
 from . import instron, read
 from .unit import ureg
 
+
 def lowercase_colname(s):
-    m = re.search(r'\s\(\S+\)$', s)
+    m = re.search(r"\s\(\S+\)$", s)
     if m:
-        units = s[m.start():m.end()]
+        units = s[m.start() : m.end()]
         units = units.strip()[1:-1]
-        return "{} ({})".format(s[0:m.start()].lower(), units)
+        return "{} ({})".format(s[0 : m.start()].lower(), units)
     else:
         return s.lower()
+
 
 def decode_impath(pth):
     """Return camera number, frame number, & timestamp from image path.
@@ -36,14 +38,19 @@ def decode_impath(pth):
 
     """
     s = os.path.basename(pth)
-    pattern = "".join([r'cam(?P<cam_id>[0-9]+)_',
-                       r'(?P<frame_id>[0-9]+)_'
-                       r'(?P<time>[0-9]+.[0-9]+)',
-                       r'(?:.tiff|.csv|.tif)?'])
+    pattern = "".join(
+        [
+            r"cam(?P<cam_id>[0-9]+)_",
+            r"(?P<frame_id>[0-9]+)_" r"(?P<time>[0-9]+.[0-9]+)",
+            r"(?:.tiff|.csv|.tif)?",
+        ]
+    )
     m = re.search(pattern, s)
-    d = {'Camera ID': m.group('cam_id'),
-         'Frame ID': m.group('frame_id'),
-         'Time [s]': float(m.group('time'))}
+    d = {
+        "Camera ID": m.group("cam_id"),
+        "Frame ID": m.group("frame_id"),
+        "Time [s]": float(m.group("time")),
+    }
     return d
 
 
@@ -66,13 +73,11 @@ def get_frame_size(archive):
 
 
 def image_id(fpath):
-    """Convert image name into a unique id.
-
-    """
+    """Convert image name into a unique id."""
     s = os.path.basename(fpath)
-    pattern = r'(?P<key>cam[0-9]_[0-9]+)[0-9._A-Za-z]+(?:.tiff|.csv|.tif)?'
+    pattern = r"(?P<key>cam[0-9]_[0-9]+)[0-9._A-Za-z]+(?:.tiff|.csv|.tif)?"
     m = re.search(pattern, s)
-    return m.group('key')
+    return m.group("key")
 
 
 def list_images(pth):
@@ -83,9 +88,8 @@ def list_images(pth):
             imlist = archive.namelist()
     else:
         files = os.listdir(pth)
-        pattern = r'cam[0-9]_[0-9]+_[0-9]+.[0-9]{3}.tiff'
-        imlist = [f for f in files
-                 if re.match(pattern, f) is not None]
+        pattern = r"cam[0-9]_[0-9]+_[0-9]+.[0-9]{3}.tiff"
+        imlist = [f for f in files if re.match(pattern, f) is not None]
     return sorted(imlist)
 
 
@@ -115,13 +119,13 @@ def tabulate_images_and_mechdata(imdir, mech_data_file=None, vic2d_dir=None):
 
     """
     if imdir is None:
-        raise(Exception("Provided None as image directory."))
-    if imdir.endswith('.zip'):
+        raise (Exception("Provided None as image directory."))
+    if imdir.endswith(".zip"):
         p_images = pjoin(os.path.dirname(imdir), imdir[:-4])
     else:
         p_images = imdir
-    p_imdata = os.path.join(p_images, '../image_measurements')
-    p_imindex = pjoin(p_imdata, 'image_index.csv')
+    p_imdata = os.path.join(p_images, "../image_measurements")
+    p_imindex = pjoin(p_imdata, "image_index.csv")
 
     ## Load image data
     image_list = list_images(p_images)
@@ -129,42 +133,45 @@ def tabulate_images_and_mechdata(imdir, mech_data_file=None, vic2d_dir=None):
     tab_frames = pd.DataFrame([a for a in map(decode_impath, image_list)])
 
     ## Compute frame times from the perspective of the test clock
-    t_frame0 = read.measurement_csv(os.path.join(p_imdata, 'ref_time.csv'))
+    t_frame0 = read.measurement_csv(os.path.join(p_imdata, "ref_time.csv"))
     t_frame0 = t_frame0.nominal_value
     timestamp0 = image_time(imindex["ref_time"])
 
-    tab_frames['Time [s]'] = (tab_frames['Time [s]'].astype('float')
-                              - timestamp0 + t_frame0)
+    tab_frames["Time [s]"] = (
+        tab_frames["Time [s]"].astype("float") - timestamp0 + t_frame0
+    )
 
     ## Add corresponding stress & strain values
     if mech_data_file is not None:
         mech_data = pd.read_csv(mech_data_file)
         for col in set(mech_data.columns) - set(["Time [s]"]):
-            tab_frames[col] = np.interp(tab_frames['Time [s]'],
-                                        mech_data['Time [s]'],
-                                        mech_data[col])
+            tab_frames[col] = np.interp(
+                tab_frames["Time [s]"], mech_data["Time [s]"], mech_data[col]
+            )
 
     ## Add paths to vic-2d files
     if vic2d_dir is not None:
-        if vic2d_dir.endswith('.zip'):
+        if vic2d_dir.endswith(".zip"):
             archive = ZipFile(vic2d_dir)
             vic2d_files = archive.namelist()
         else:
             vic2d_files = os.listdir(vic2d_dir)
         tab_v2d = pd.DataFrame([decode_impath(a) for a in vic2d_files])
         pths = [os.path.join(vic2d_dir, p) for p in vic2d_files]
-        tab_v2d['Vic-2D File'] = pths
-        tab_v2d = tab_v2d.drop('Time [s]', 1)
-        tab_frames = pd.merge(tab_frames, tab_v2d, how='left',
-                              on=['Camera ID', 'Frame ID'])
+        tab_v2d["Vic-2D File"] = pths
+        tab_v2d = tab_v2d.drop("Time [s]", 1)
+        tab_frames = pd.merge(
+            tab_frames, tab_v2d, how="left", on=["Camera ID", "Frame ID"]
+        )
     else:
-        tab_frames['Vic-2D File'] = np.nan
+        tab_frames["Vic-2D File"] = np.nan
 
     return tab_frames
 
+
 def image_scale(fpath):
     """Reads `image_scale.csv` and calculates mm/px"""
-    with open(fpath, 'r') as f:
+    with open(fpath, "r") as f:
         reader = csv.reader(f)
         for line in reader:
             unit = line[-1]
@@ -179,8 +186,11 @@ def image_scale(fpath):
     try:
         scale = d / px_d
     except UnboundLocalError:
-        raise(Exception("{} does not have complete image scale information".format(fpath)))
+        raise (
+            Exception("{} does not have complete image scale information".format(fpath))
+        )
     return scale
+
 
 def from_px(fpath, scale):
     """Reads ref_length.csv
@@ -189,8 +199,9 @@ def from_px(fpath, scale):
 
     """
     d = read.measurement_csv(fpath)
-    mm_d =  d * scale
+    mm_d = d * scale
     return mm_d
+
 
 def image_time(imname):
     """Parse image time from image filename.
@@ -205,11 +216,10 @@ def image_time(imname):
     timecode = re.search(pattern, imname).group(2)
     return float(timecode)
 
-def read_image_index(fpath):
-    """Returns dictionary of image names for specific test events.
 
-    """
-    with open(fpath, 'r', newline='') as csvfile:
+def read_image_index(fpath):
+    """Returns dictionary of image names for specific test events."""
+    with open(fpath, "r", newline="") as csvfile:
         image_index = dict()
         for row in csv.reader(csvfile):
             image_index[row[0]] = row[1]
@@ -237,8 +247,7 @@ def get_image_list(fpath):
     # Check for image directory existence
     imdir = os.path.dirname(fpath)
     if not os.path.isdir(imdir):
-        raise Exception("Could not find image directory at " +
-                        imdir)
+        raise Exception("Could not find image directory at " + imdir)
     # Build the image list
     images = []
     for fname in os.listdir(imdir):
@@ -246,34 +255,41 @@ def get_image_list(fpath):
             images.append(fname)
     images.sort()
     imlist = []
-    curr_phase = 'extra'
-    image_index = dict((k, images.index(image_index[k]))
-                       for k, v in image_index.iteritems()
-                       if v != 'NA')
+    curr_phase = "extra"
+    image_index = dict(
+        (k, images.index(image_index[k]))
+        for k, v in image_index.iteritems()
+        if v != "NA"
+    )
 
     # Find last image
-    if 'end' in image_index:
-        i_end = image_index['end']
+    if "end" in image_index:
+        i_end = image_index["end"]
     else:
         i_end = len(images) - 1
 
     for i, fname in enumerate(images):
         if i > i_end:
-            curr_phase = 'extra'
-        elif (i >= image_index['ref_time'] and
-            i < image_index['ramp_start']):
-            curr_phase = 'preconditioning'
-        elif i >= image_index['ramp_start']:
-            curr_phase = 'ramp'
+            curr_phase = "extra"
+        elif i >= image_index["ref_time"] and i < image_index["ramp_start"]:
+            curr_phase = "preconditioning"
+        elif i >= image_index["ramp_start"]:
+            curr_phase = "ramp"
         imlist.append((fname, curr_phase))
     return imlist
 
-def make_vic2d_lists(p_imindex, d_images, p_mech_data,
-                     interval=0.01, highres=None,
-                     fout='vic2d_list.txt',
-                     zero_strain='zero_strain',
-                     start='vic2d_start',
-                     end='vic2d_end'):
+
+def make_vic2d_lists(
+    p_imindex,
+    d_images,
+    p_mech_data,
+    interval=0.01,
+    highres=None,
+    fout="vic2d_list.txt",
+    zero_strain="zero_strain",
+    start="vic2d_start",
+    end="vic2d_end",
+):
     """List images for vic2d analysis.
 
     Inputs
@@ -292,12 +308,11 @@ def make_vic2d_lists(p_imindex, d_images, p_mech_data,
     """
     # Read image index
     imindex = read_image_index(p_imindex)
-    if d_images.endswith('.zip'):
+    if d_images.endswith(".zip"):
         archive = ZipFile(d_images)
         imlist = archive.namelist()
     else:
-        imlist = [os.path.relpath(f, d_images)
-                  for f in list_images(d_images)]
+        imlist = [os.path.relpath(f, d_images) for f in list_images(d_images)]
 
     tab_frames = tabulate_images(d_images, p_mech_data)
 
@@ -308,24 +323,24 @@ def make_vic2d_lists(p_imindex, d_images, p_mech_data,
     imname_start = imindex[start]
     imname_end = imindex[end]
 
-    y_start = tab_frames['Stretch Ratio'][imlist.index(imname_start)]
-    y_end = tab_frames['Stretch Ratio'][imlist.index(imname_end)]
+    y_start = tab_frames["Stretch Ratio"][imlist.index(imname_start)]
+    y_end = tab_frames["Stretch Ratio"][imlist.index(imname_end)]
     yt = 0
-    for i, y in enumerate(tab_frames['Stretch Ratio']):
+    for i, y in enumerate(tab_frames["Stretch Ratio"]):
         t = image_time(imlist[i])
         if highres is not None:
-            inhighres = (y >= highres[0] and y <= highres[1])
+            inhighres = y >= highres[0] and y <= highres[1]
         else:
             inhighres = False
-        if (t >= t_start and t <= t_end
-            and (y - yt > interval or inhighres)):
+        if t >= t_start and t <= t_end and (y - yt > interval or inhighres):
             yt = y
             selected_images.append(imlist[i])
 
     # Write image list
-    with open(fout, 'w') as f:
+    with open(fout, "w") as f:
         for nm in selected_images:
-            f.write(nm + '\n')
+            f.write(nm + "\n")
+
 
 def mask_from_poly(poly, shape):
     """Create an image mask from a `shapely` polygon.
@@ -336,7 +351,7 @@ def mask_from_poly(poly, shape):
     the polygon mask should be drawn.
 
     """
-    if not hasattr(poly, '__iter__'):
+    if not hasattr(poly, "__iter__"):
         # Single polygon, not MultiPolygon or list of polygons.  Make it
         # a list so we can use a common execution path.
         poly = [poly]
@@ -346,13 +361,15 @@ def mask_from_poly(poly, shape):
     poly = [p.buffer(0.5) for p in poly]
 
     # Draw the polygon(s) into the mask
-    mask = Image.new('L', (shape[1], shape[0]), 0)
+    mask = Image.new("L", (shape[1], shape[0]), 0)
+
     def draw(mask, coords, fill=1):
         ImageDraw.Draw(mask).polygon(coords, outline=0, fill=fill)
+
     for p in poly:
         # Draw the entire polygon into the mask
         draw(mask, p.exterior.coords[:])
         # Anti-draw any holes into mask
         for hole in p.interiors:
             draw(mask, hole.coords[:], 0)
-    return np.array(mask).astype('bool')
+    return np.array(mask).astype("bool")

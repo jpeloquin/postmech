@@ -9,7 +9,8 @@ import numpy as np
 
 from .unit import ureg
 
-def open_archive_file(pth, mode='rt'):
+
+def open_archive_file(pth, mode="rt"):
     """Return a file object for a path that may include a .zip file.
 
     Example:
@@ -22,25 +23,26 @@ def open_archive_file(pth, mode='rt'):
 
     # Get each element of the path
     parts = []
-    while pth and pth != '/':
+    while pth and pth != "/":
         head, tail = os.path.split(pth)
         parts.append(tail)
         pth = head
 
     # Walk up the path, opening zip files as necessary.  Currently, the
     # cases of 0 and 1 zip files are supported.
-    pth = '/'
+    pth = "/"
     while parts:
         part = parts.pop()
         pth = os.path.join(pth, part)
-        if pth.endswith('.zip'):
+        if pth.endswith(".zip"):
             archive = ZipFile(pth)
             f = archive.open(os.path.join(*parts[::-1]))
-            if 'b' in mode:
+            if "b" in mode:
                 return io.BytesIO(f)
-            elif 't' in mode:
+            elif "t" in mode:
                 return io.TextIOWrapper(f)
     return open(pth, mode)
+
 
 def measurement_csv(fpath):
     """Read a csv measurement file.
@@ -50,17 +52,18 @@ def measurement_csv(fpath):
     value,s.d.,"unit"
 
     """
-    with open(fpath, 'r', newline='') as f:
+    with open(fpath, "r", newline="") as f:
         reader = csv.reader(f)
         for line in reader:
             unit = ureg(line[-1])
             d = float(line[0]) * unit
-            if line[1] in set(['NA', 'ND', 'NaN', '']):
+            if line[1] in set(["NA", "ND", "NaN", ""]):
                 sd = 0
             else:
                 sd = float(line[1])
             d = d.plus_minus(sd)
     return d
+
 
 def bose_data(fpath):
     """Read a text data file exported by Wintest.
@@ -74,9 +77,10 @@ def bose_data(fpath):
     not strictly plain text.
 
     """
+
     def parseline(s):
         # These files use a trailing comma
-        l = [cell.strip(" \"") for cell in s.rstrip("\r\n ,").split(",")]
+        l = [cell.strip(' "') for cell in s.rstrip("\r\n ,").split(",")]
         return l
 
     def is_blank(line):
@@ -85,14 +89,13 @@ def bose_data(fpath):
         else:
             return False
 
-    dtype = {"Scan": int,
-             "Points": int}
+    dtype = {"Scan": int, "Points": int}
     # ^ everything else is float
 
     mks_unit = {"Sec": "s"}
 
-     # Read the file
-    with open(fpath, 'r', newline='') as f:
+    # Read the file
+    with open(fpath, "r", newline="") as f:
         lines = f.readlines()
 
     # Find header row and units.  The header row will start with
@@ -109,8 +112,7 @@ def bose_data(fpath):
         raise Exception(f"No header row found in first {nsearch} lines of {fpath}")
     exported_vars = parseline(lines[header_row])
     columns = ["Scan"] + exported_vars
-    units = {"Scan": "1",
-             "Points": "1"}
+    units = {"Scan": "1", "Points": "1"}
     units_cells = parseline(lines[header_row + 1])
     for var, unit in zip(exported_vars, units_cells):
         if var in units:
@@ -139,16 +141,14 @@ def bose_data(fpath):
         i += 1
     data = pd.DataFrame.from_dict(data)
 
-
     # Add units to column names
-    std_varname = {"Elapsed Time": "Time",
-                   "Disp": "Position"}
+    std_varname = {"Elapsed Time": "Time", "Disp": "Position"}
     newnames = {c: f"{std_varname.get(c, c)} [{units[c]}]" for c in columns}
-    data = data.rename(columns = newnames)
+    data = data.rename(columns=newnames)
     return data
 
 
-def instron_data(fpath, thousands_sep=','):
+def instron_data(fpath, thousands_sep=","):
     """Read data from an Instron csv file.
 
     This function is deprecated; use `instron_rawdata` instead.
@@ -161,48 +161,51 @@ def instron_data(fpath, thousands_sep=','):
     time, extension, load : numpy array
 
     """
-    warnings.warn("instron_data is deprecated; use instron_rawdata",
-                  category=DeprecationWarning)
+    warnings.warn(
+        "instron_data is deprecated; use instron_rawdata", category=DeprecationWarning
+    )
 
     def strip_sep(s):
-        return s.replace(thousands_sep, '')
+        return s.replace(thousands_sep, "")
 
     t = []
     d = []
     p = []
-    with open(fpath, 'r', newline='') as f:
+    with open(fpath, "r", newline="") as f:
         reader = csv.reader(f, delimiter=",", quotechar='"')
+
         def is_blank(line):
             return not (line and any(line))
+
         try:
             while not is_blank(reader.__next__()):
                 pass
         except StopIteration:
-            raise ValueError("Could not find end of header (a blank line) in {}".format(fpath))
-        header = reader.__next__() # read column names
+            raise ValueError(
+                "Could not find end of header (a blank line) in {}".format(fpath)
+            )
+        header = reader.__next__()  # read column names
         # Check that we arrived at the right row
-        assert header[0] == 'Time'
+        assert header[0] == "Time"
         # Find Load and Extension columns
-        dind = header.index('Extension')
-        pind = header.index('Load')
-        units = reader.__next__() # read units
+        dind = header.index("Extension")
+        pind = header.index("Load")
+        units = reader.__next__()  # read units
         assert units[0] == "(s)"
         assert units[dind] == "(mm)"
         assert units[pind] == "(N)"
         for row in reader:
             t.append(float(strip_sep(row[0])))
-            d.append(float(strip_sep(row[dind])) / 1000) # mm -> m
+            d.append(float(strip_sep(row[dind])) / 1000)  # mm -> m
             p.append(float(strip_sep(row[pind])))
     t = np.array(t)
     d = np.array(d)
     p = np.array(p)
-    df = pd.DataFrame.from_dict({'Time [s]': t,
-                                 'Position [m]': d,
-                                 'Load [N]': p})
+    df = pd.DataFrame.from_dict({"Time [s]": t, "Position [m]": d, "Load [N]": p})
     return df
 
 
-def instron_rawdata(fpath, thousands_sep=','):
+def instron_rawdata(fpath, thousands_sep=","):
     """Read a Instron / Bluehill raw data csv file.
 
     Outputs
@@ -217,8 +220,10 @@ def instron_rawdata(fpath, thousands_sep=','):
     the pattern "Channel (unit)".
 
     """
+
     def strip_sep(s):
-        return s.replace(thousands_sep, '')
+        return s.replace(thousands_sep, "")
+
     def strip_line(line):
         """Remove trailing blank entries from line and strip leading and trailing
         whitespace from each remaining entry"""
@@ -229,8 +234,9 @@ def instron_rawdata(fpath, thousands_sep=','):
                 return [a.strip() for a in line[:i]]
             else:
                 i -= 1
+
     metadata = {}
-    with open(fpath, 'r', newline='') as f:
+    with open(fpath, "r", newline="") as f:
         reader = csv.reader(f, delimiter=",", quotechar='"')
         # Read metadata rows
         try:
@@ -250,12 +256,14 @@ def instron_rawdata(fpath, thousands_sep=','):
                     v = float(strip_sep(v)) * ureg(unit)
                 metadata[k] = v
         except StopIteration:
-            raise ValueError("Could not find end of header (a blank line) in {}".format(fpath))
+            raise ValueError(
+                "Could not find end of header (a blank line) in {}".format(fpath)
+            )
         # Read column names for data table
         header = reader.__next__()
         # Check that the row we think is the header row really is the
         # header row
-        assert 'Time' in header
+        assert "Time" in header
         # Read units header
         units = [s.strip().lstrip("('").rstrip(")'") for s in reader.__next__()]
         for i, s in enumerate(header):

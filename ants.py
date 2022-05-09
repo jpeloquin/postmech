@@ -314,9 +314,7 @@ def track_ROIs(
     # Tabulate all ROI tracks together
     all_tracks = tracks[0].set_index("Name")
     for t in tracks[1:]:
-        col = [
-            c for c in t.columns if (c.endswith("centroid") or c.endswith("affine"))
-        ]
+        col = [c for c in t.columns if (c.endswith("centroid") or c.endswith("affine"))]
         all_tracks = all_tracks.join(t.set_index("Name")[col])
     all_tracks.reset_index(inplace=True)
     # Plot all ROI tracks together

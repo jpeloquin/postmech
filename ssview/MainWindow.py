@@ -9,13 +9,13 @@ from operator import itemgetter
 
 from data_gui import DataView
 
-class MainWindow(QtGui.QMainWindow):
 
+class MainWindow(QtGui.QMainWindow):
     def __init__(self, parent=None):
         # Initialize the Qt parts of the UI
         super(MainWindow, self).__init__(parent)
         codedir = os.path.dirname(os.path.abspath(__file__))
-        uic.loadUi(os.path.join(codedir, 'MainWindow.ui'), self)
+        uic.loadUi(os.path.join(codedir, "MainWindow.ui"), self)
 
         # Variables
         currentfile = None
@@ -33,19 +33,16 @@ class MainWindow(QtGui.QMainWindow):
         self.setCentralWidget(self.data_view)
 
     def ui_open(self):
-        """Get file path from user and open data listed in it.
-
-        """
-        msg = 'Open test data JSON file'
+        """Get file path from user and open data listed in it."""
+        msg = "Open test data JSON file"
         pth, _filter = QtGui.QFileDialog.getOpenFileName(self, msg)
         self.load_data(pth)
 
     def load_data(self, pth):
-        """Load data listed in a .json file.
-
-        """
+        """Load data listed in a .json file."""
         self.currentfile = pth
         self.data_view.load_data(pth)
+
 
 def main(pth_data=None):
     win = MainWindow()
@@ -54,7 +51,8 @@ def main(pth_data=None):
         win.load_data(pth_data)
     app.exec_()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     if len(sys.argv) > 1:
         pth_data = sys.argv[1]

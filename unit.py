@@ -1,4 +1,4 @@
 from pint import UnitRegistry
 
 ureg = UnitRegistry()
-ureg.define('pixel = [distance] = px')
+ureg.define("pixel = [distance] = px")

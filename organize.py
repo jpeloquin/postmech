@@ -4,10 +4,10 @@
 """
 import os, json
 
-def write_test_file(fout='test_data.json',
-                    ssfile='stress_strain.csv',
-                    vic2d_folder=None,
-                    images=None):
+
+def write_test_file(
+    fout="test_data.json", ssfile="stress_strain.csv", vic2d_folder=None, images=None
+):
     """Write a JSON file that gathers all the data for a test.
 
     The JSON file specifies:
@@ -31,18 +31,18 @@ def write_test_file(fout='test_data.json',
     # Initialize variables
     data = {}
     # Stress-strain data location
-    data['stress_strain_file'] = os.path.relpath(ssfile, outdir)
+    data["stress_strain_file"] = os.path.relpath(ssfile, outdir)
     # Vic-2D data location
     if vic2d_folder is None:
-        data['vic2d_folder'] = None
+        data["vic2d_folder"] = None
     else:
-        data['vic2d_folder'] = os.path.relpath(vic2d_folder, outdir)
+        data["vic2d_folder"] = os.path.relpath(vic2d_folder, outdir)
     # List of images
     if images is None:
-        data['images'] = None
+        data["images"] = None
     else:
         images = [os.path.relpath(impath, outdir) for impath in images]
-        data['images'] = images
+        data["images"] = images
     # Write JSON
-    with open(fout, 'w') as f:
+    with open(fout, "w") as f:
         json.dump(data, f)

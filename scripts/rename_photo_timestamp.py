@@ -15,9 +15,7 @@ from PIL import Image, ExifTags
 
 s = "Rename a file by prefixing its EXIF timestamp."
 parser = argparse.ArgumentParser(description=s)
-parser.add_argument(
-    "files", nargs="+", help="File paths to rename"
-)
+parser.add_argument("files", nargs="+", help="File paths to rename")
 args = parser.parse_args()
 
 strfmt_iso8601 = "%Y-%m-%dT%l%M%S%z"
@@ -32,7 +30,9 @@ for p in args.files:
         except KeyError:
             continue
     else:
-        raise ValueError(f"{p} has none of the following EXIF tags: {', '.join(time_tags)}")
+        raise ValueError(
+            f"{p} has none of the following EXIF tags: {', '.join(time_tags)}"
+        )
     # The strptime format might vary from camera to camera.  This works with a Canon
     # PowerShot ELPH 300 HS.
     t = datetime.strptime(s_time, "%Y:%m:%d %H:%M:%S")
