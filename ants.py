@@ -41,7 +41,32 @@ def write_affine(affine: NDArray, pth: Union[str, Path]):
         "AffineTransform_double_2_2": np.atleast_2d(serialized).T,
         "fixed": np.zeros((affine.shape[0] - 1, 1)),
     }
-    savemat(pth, mat)
+    savemat(pth, mat, format="4")  # ANTs requires format 4
+
+
+def plan_registration(frames, reference_frame=None) -> List[Tuple[str, Optional[str]]]:
+    """Return list of frames and what to use to initialize their registration
+
+    Returns a list of tuples, (frame, frame to use for initialization), in the order
+    in which the registrations should be done.  If there should not be an
+    initialization for that frame, the second element of the tuple is None.
+
+    """
+    if reference_frame is None:
+        reference_frame = frames[0]
+    first = []
+    second = []
+    before_reference = True
+    for i, frame in enumerate(frames):
+        if frame == reference_frame:
+            first.append((frame, None))
+            before_reference = False
+        elif before_reference:
+            second.append((frame, frames[i + 1]))
+        else:  # after reference
+            first.append((frame, frames[i - 1]))
+    plan = first + second[::-1]
+    return plan
 
 
 def register(
@@ -80,9 +105,7 @@ def register(
     /coordinates/ to fixed image coordinates.
 
     """
-    dir_out = Path(dir_out)
-    if not dir_out.exists():
-        dir_out.mkdir()
+    dir_out = ensure_dir(dir_out)
     # Get frame IDs
     fixed_name = str(Path(fixed).with_suffix("").name)
     moving_name = str(Path(moving).with_suffix("").name)
@@ -174,9 +197,13 @@ def track_ROI(
     cmd,
     id_,
     exclusion_mask: Optional[Union[str, Path]] = None,
+    reference_frame: Optional[str] = None,
     **kwargs,
 ):
     """Track an ROI through a list of frames
+
+    ROIs should be drawn in the reference frame.  If no reference frame is provided,
+    it is assumed to be the first frame in `frames`.
 
     kwargs are passed directly to `register()`.
 
@@ -206,17 +233,24 @@ def track_ROI(
         raise ValueError("Image archive must be a zip file or a directory.")
     dir_affines = clean_dir(workdir / f"{id_}_-_affines")
     dir_tracks = clean_dir(workdir / f"{id_}_-_tracks")
-    p_log = workdir / f"{id_}_-_commands.log"
     # Run the registrations
-    p_ref = dir_images / frames[0]
+    if reference_frame is None:
+        reference_frame = frames[0]
 
-    def process_frame(frame, logf, affine):
+    def process_frame(frame, initial_affine: Optional[Union[Path, str]], logf):
         p_def = dir_images / frame
-        p_affine, cmd_out = register(
-            p_ref, p_def, p_mask, dir_affines, cmd, affine, **kwargs
-        )
-        logf.write(" ".join([shlex.quote(c) for c in cmd_out]) + "\n")
-        affine = np.linalg.inv(read_affine(p_affine))
+        p_ref = dir_images / reference_frame
+        if frame == reference_frame:
+            affine = np.eye(3)
+            nm = str(Path(reference_frame).with_suffix("").name)
+            p_affine = dir_affines / f"{nm}_to_{nm}_0GenericAffine.mat"
+            write_affine(affine, p_affine)
+        else:
+            p_affine, cmd_out = register(
+                p_ref, p_def, p_mask, dir_affines, cmd, initial_affine, **kwargs
+            )
+            logf.write(" ".join([shlex.quote(c) for c in cmd_out]) + "\n")
+            affine = np.linalg.inv(read_affine(p_affine))
         vertices, center = transformed_roi(roi_pts, affine=affine)
         img = plot_roi(p_def, vertices, center)
         img.save(dir_tracks / frame)
@@ -228,30 +262,24 @@ def track_ROI(
         }
         return info
 
-    # Add reference frame entry to frame info table
-    affine = np.eye(3)
-    fixed_name = str(Path(frames[0]).with_suffix("").name)
-    p_affine = dir_affines / f"{fixed_name}_to_{fixed_name}_0GenericAffine.mat"
-    write_affine(affine, p_affine)
-    vertices, center = transformed_roi(roi_pts, affine)
-    plot_roi(dir_images / frames[0], vertices, center).save(dir_tracks / frames[0])
-    info = [
-        {
-            "Name": frames[0],
-            "Image": os.path.relpath(dir_images / frames[0], workdir),
-            "Affine": str(p_affine.relative_to(workdir)),
-            "ROI centroid": center,
-        }
-    ]
     # Add all registration data to frame info table
+    info_table = []
+    p_affine = {}  # frame → path of affine
+    plan = plan_registration(frames, reference_frame)
+    p_log = workdir / f"{id_}_-_commands.log"
     with open(p_log, "w", encoding="utf-8", buffering=1) as logf:
-        affine = None
-        for frame in frames[1:]:
-            row = process_frame(frame, logf, affine)
-            affine = workdir / row["Affine"]
-            info.append(row)
-    info = DataFrame(info)
-    return info
+        for frame, initializer in plan:
+            if initializer is not None:
+                # The registration plan is assumed to always do the initializer
+                # frame's registration before its affine needs to be used to
+                # initialize another frame's registration.
+                initial_affine = p_affine[initializer]
+            else:
+                initial_affine = None
+            row = process_frame(frame, initial_affine, logf)
+            info_table.append(row)
+            p_affine[frame] = workdir / row["Affine"]
+    return DataFrame(info_table)
 
 
 def track_ROIs(
@@ -262,6 +290,7 @@ def track_ROIs(
     cmd,
     sid,
     exclusion_mask: Optional[Union[str, Path]] = None,
+    reference_frame: Optional[str] = None,
     nproc: Optional[int] = None,
     **kwargs,
 ):
@@ -293,7 +322,8 @@ def track_ROIs(
             workdir,
             cmd,
             f"{sid}_-_ROI={nm}",
-            exclusion_mask,
+            exclusion_mask=exclusion_mask,
+            reference_frame=reference_frame,
             **kwargs,
         )
         info = info.rename({"ROI centroid": f"{nm} centroid"}, axis=1)
