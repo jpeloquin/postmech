@@ -210,6 +210,8 @@ def track_ROI(
     """
     archive = Path(archive)
     frames = [Path(f).name for f in frames]
+    if reference_frame is None:
+        reference_frame = frames[0]
     workdir = Path(workdir)
     size = get_frame_size(archive)
     mask = make_mask(roi_pts, size)
@@ -233,9 +235,6 @@ def track_ROI(
         raise ValueError("Image archive must be a zip file or a directory.")
     dir_affines = clean_dir(workdir / f"{id_}_-_affines")
     dir_tracks = clean_dir(workdir / f"{id_}_-_tracks")
-    # Run the registrations
-    if reference_frame is None:
-        reference_frame = frames[0]
 
     def process_frame(frame, initial_affine: Optional[Union[Path, str]], logf):
         p_def = dir_images / frame
@@ -300,6 +299,8 @@ def track_ROIs(
 
     """
     archive = Path(archive)
+    if reference_frame is None:
+        reference_frame = frames[0]
     # Extract images from zip archive once up-front, if necessary
     if archive.suffix == ".zip":
         # Images are in a .zip archive
@@ -331,10 +332,11 @@ def track_ROIs(
         return info
 
     # Plot all ROIs, with labels, in reference frame
-    roi_label_img = Image.open(dir_images / frames[0])
+    roi_label_img = Image.open(dir_images / reference_frame)
     for nm, pts in rois.items():
         plot_roi(roi_label_img, pts, np.mean(pts, axis=0), nm)
-    roi_label_img.save(workdir / f"{sid}_-_all_ROIs_labeled.png")
+    ref_name = Path(reference_frame).with_suffix("").name
+    roi_label_img.save(workdir / f"{sid}_-_all_ROIs_-_{ref_name}.png")
     # Track all ROIs in turn
     if nproc is None:
         tracks = list(map(process_roi, rois.items()))
