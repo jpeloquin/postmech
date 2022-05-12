@@ -159,24 +159,28 @@ def plot_roi(img: Union[str, Path, Image.Image], vertices, center, name=None):
     return img
 
 
-def plot_roi_tracks(
-    images: Iterable[Union[str, Path, Image.Image]],
+def plot_rois(
     rois: Dict,
-    affines: Dict,
+    rois_table: DataFrame,
+    root: Union[str, Path],
     dir_out: Union[str, Path],
 ):
     """Plot tracks of one or more ROIs onto images"""
+    root = Path(root)
     dir_out = ensure_dir(Path(dir_out))
-    for i, img in enumerate(images):
-        if isinstance(img, Image.Image):
-            imname = f"{i}.tiff"
-        else:
-            imname = Path(img).name
-            img = Image.open(img)
-        for k, roi in rois.items():
-            A = np.linalg.inv(read_affine(affines[k][i]))
+    roi_names = [
+        c.removesuffix(" affine") for c in rois_table.columns if c.endswith(" affine")
+    ]
+    for i in rois_table.index:
+        nm_img = rois_table.loc[i, "Name"]
+        p_img = root / rois_table.loc[i, "Image"]
+        img = Image.open(p_img)
+        for k in roi_names:
+            roi = rois[k]
+            p_affine = root / rois_table.loc[i, f"{k} affine"]
+            A = np.linalg.inv(read_affine(p_affine))
             img = plot_roi(img, *transformed_roi(roi, A))
-        img.save(dir_out / imname)
+        img.save(dir_out / nm_img)
 
 
 def read_roi_tracks(p):
@@ -350,13 +354,8 @@ def track_ROIs(
         all_tracks = all_tracks.join(t.set_index("Name")[col])
     all_tracks.reset_index(inplace=True)
     # Plot all ROI tracks together
-    affines = {
-        c.removesuffix(" affine"): [workdir / p for p in all_tracks[c].tolist()]
-        for c in all_tracks.columns
-        if c.endswith("affine")
-    }
-    dir_tracks = clean_dir(workdir / f"{sid}_-_all_ROIs_tracks")
-    plot_roi_tracks([dir_images / frame for frame in frames], rois, affines, dir_tracks)
+    dir_all_ROIs = clean_dir(workdir / f"{sid}_-_all_ROIs_tracks")
+    plot_rois(rois, all_tracks, workdir, dir_all_ROIs)
     return all_tracks
 
 
