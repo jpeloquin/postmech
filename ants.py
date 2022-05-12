@@ -278,7 +278,7 @@ def track_ROI(
             row = process_frame(frame, initial_affine, logf)
             info_table.append(row)
             p_affine[frame] = workdir / row["Affine"]
-    return DataFrame(info_table)
+    return DataFrame(info_table).sort_index(inplace=True)
 
 
 def track_ROIs(
