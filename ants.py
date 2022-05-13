@@ -31,7 +31,6 @@ def read_affine(pth: Union[str, Path]):
     affine = np.array(
         [[a[0][0], a[1][0], a[-2][0]], [a[2][0], a[3][0], a[-1][0]], [0, 0, 1]]
     )
-    affine = np.linalg.inv(affine)
     return affine
 
 
@@ -178,7 +177,7 @@ def plot_rois(
         for k in roi_names:
             roi = rois[k]
             p_affine = root / rois_table.loc[i, f"{k} affine"]
-            A = np.linalg.inv(read_affine(p_affine))
+            A = read_affine(p_affine)
             img = plot_roi(img, *transformed_roi(roi, A))
         img.save(dir_out / nm_img)
 
@@ -253,7 +252,7 @@ def track_ROI(
                 p_ref, p_def, p_mask, dir_affines, cmd, initial_affine, **kwargs
             )
             logf.write(" ".join([shlex.quote(c) for c in cmd_out]) + "\n")
-            affine = np.linalg.inv(read_affine(p_affine))
+            affine = read_affine(p_affine)
         vertices, center = transformed_roi(roi_pts, affine=affine)
         img = plot_roi(p_def, vertices, center)
         img.save(dir_tracks / frame)
