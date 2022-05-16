@@ -99,6 +99,8 @@ def tabulate_images(pth):
     iminfo = [decode_impath(nm) for nm in imlist]
     tab = DataFrame(iminfo)
     tab["Name"] = imlist
+    # Should be sorted already, but guarantee this
+    tab = tab.sort_values("Time [s]")
     return tab
 
 
