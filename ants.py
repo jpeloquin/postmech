@@ -15,14 +15,8 @@ from pathos.multiprocessing import ProcessPool
 from scipy.io import loadmat, savemat
 
 from .images import get_frame_size
+from .imagej import mask_from_xy
 from .util import clean_dir, ensure_dir
-
-
-def make_mask(roi, shape):
-    mask = Image.new("L", shape, 0)
-    artist = ImageDraw.Draw(mask)
-    artist.polygon([(x, y) for x, y in roi], fill=255, outline=None)
-    return mask
 
 
 def read_affine(pth: Union[str, Path]):
@@ -217,7 +211,7 @@ def track_ROI(
         reference_frame = frames[0]
     workdir = Path(workdir)
     size = get_frame_size(archive)
-    mask = make_mask(roi_pts, size)
+    mask = mask_from_xy(roi_pts, size)
     if exclusion_mask is not None:
         exclusion_mask = Image.open(exclusion_mask).convert("L")
         mask.paste(Image.new("L", size, 0), mask=exclusion_mask)
