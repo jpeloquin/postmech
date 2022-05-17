@@ -133,7 +133,7 @@ def register(
     return p, cmd
 
 
-def plot_roi(img: Union[str, Path, Image.Image], vertices, center, name=None):
+def plot_roi(img: Union[str, Path, Image.Image], vertices, center=None, name=None):
     """Plot ROI pts on an image
 
     Note that if an image object is provided, it will be modified.
@@ -143,8 +143,9 @@ def plot_roi(img: Union[str, Path, Image.Image], vertices, center, name=None):
         img = Image.open(img)
     artist = ImageDraw.Draw(img)
     artist.polygon([(x, y) for x, y, *_ in vertices], fill=None, outline="white")
-    artist.line(((center[0] - 3, center[1]), (center[0] + 3, center[1])), fill="white")
-    artist.line(((center[0], center[1] - 3), (center[0], center[1] + 3)), fill="white")
+    if center is not None:
+        artist.line(((center[0] - 3, center[1]), (center[0] + 3, center[1])), fill="white")
+        artist.line(((center[0], center[1] - 3), (center[0], center[1] + 3)), fill="white")
     if name is not None:
         fnt = ImageFont.truetype("Arial.ttf", 16)
         color = (255, 255, 255, 255) if img.mode == "RGB" else 255
