@@ -1,9 +1,10 @@
 import re
 
-from pint import UnitRegistry
+import pint
 from uncertainties import ufloat
 
-ureg = UnitRegistry()
+# packages must use pint.get_application_registry to integrate properly with user code
+ureg = pint.get_application_registry()
 ureg.define("pixel = [distance] = px")
 
 
