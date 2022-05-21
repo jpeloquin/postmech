@@ -3,9 +3,16 @@ import re
 import pint
 from uncertainties import ufloat
 
+
+def fix_pint_registry(ureg: pint.registry.UnitRegistry):
+    # https://github.com/hgrecco/pint/issues/1396
+    ureg.define("@alias pixel = px")
+    assert len(ureg("px").compatible_units()) == 0
+    return ureg
+
+
 # packages must use pint.get_application_registry to integrate properly with user code
-ureg = pint.get_application_registry()
-ureg.define("pixel = [distance] = px")
+ureg = fix_pint_registry(pint.get_application_registry())
 
 
 def parse(s: str) -> ureg.Quantity:
