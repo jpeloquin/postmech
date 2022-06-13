@@ -59,11 +59,11 @@ def get_frame_size(archive):
     archive = Path(archive)
     if archive.is_dir():
         for p in archive.iterdir():
-            if p.suffix == ".tiff":
+            if p.suffix in (".tiff", ".tif", ".png"):
                 image = Image.open(p)
                 break
         else:
-            raise ValueError("No .tiff files found in image archive directory.")
+            raise ValueError("No .tiff, .tif, or .png files found in image archive directory.")
     elif archive.suffix == ".zip":
         with ZipFile(archive) as a:
             image = Image.open(io.BytesIO(a.read(a.namelist()[0])))
