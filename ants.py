@@ -6,6 +6,7 @@ import subprocess
 from typing import Dict, Iterable, List, Optional, Tuple, Union
 from zipfile import ZipFile
 
+from matplotlib import font_manager
 import numpy as np
 from numpy.typing import NDArray
 import pandas as pd
@@ -147,7 +148,9 @@ def plot_roi(img: Union[str, Path, Image.Image], vertices, center=None, name=Non
         artist.line(((center[0] - 3, center[1]), (center[0] + 3, center[1])), fill="white")
         artist.line(((center[0], center[1] - 3), (center[0], center[1] + 3)), fill="white")
     if name is not None:
-        fnt = ImageFont.truetype("Arial.ttf", 16)
+        font = font_manager.FontProperties(family='sans-serif', weight='normal')
+        fname = font_manager.findfont(font)
+        fnt = ImageFont.truetype(fname, 16)
         color = (255, 255, 255, 255) if img.mode == "RGB" else 255
         artist.text(center, name, font=fnt, fill=color)
     return img
