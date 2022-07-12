@@ -1,3 +1,7 @@
+import concurrent.futures
+from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
+from copy import copy
 from numbers import Number
 import os
 from pathlib import Path
@@ -12,7 +16,6 @@ from numpy.typing import NDArray
 import pandas as pd
 from pandas import DataFrame
 from PIL import Image, ImageDraw, ImageFont
-from pathos.multiprocessing import ProcessPool
 from scipy.io import loadmat, savemat
 
 from .images import get_frame_size
@@ -41,9 +44,9 @@ def write_affine(affine: NDArray, pth: Union[str, Path]):
 def plan_registration(frames, reference_frame=None) -> List[Tuple[str, Optional[str]]]:
     """Return list of frames and what to use to initialize their registration
 
-    Returns a list of tuples, (frame, frame to use for initialization), in the order
-    in which the registrations should be done.  If there should not be an
-    initialization for that frame, the second element of the tuple is None.
+    Returns a list of tuples, `(frame, frame to use for initialization)`, in the order
+    in which the registrations should be done.  If there should not be an initialization
+    for that frame, the second element of the tuple is None.
 
     """
     if reference_frame is None:
@@ -145,10 +148,14 @@ def plot_roi(img: Union[str, Path, Image.Image], vertices, center=None, name=Non
     artist = ImageDraw.Draw(img)
     artist.polygon([(x, y) for x, y, *_ in vertices], fill=None, outline="white")
     if center is not None:
-        artist.line(((center[0] - 3, center[1]), (center[0] + 3, center[1])), fill="white")
-        artist.line(((center[0], center[1] - 3), (center[0], center[1] + 3)), fill="white")
+        artist.line(
+            ((center[0] - 3, center[1]), (center[0] + 3, center[1])), fill="white"
+        )
+        artist.line(
+            ((center[0], center[1] - 3), (center[0], center[1] + 3)), fill="white"
+        )
     if name is not None:
-        font = font_manager.FontProperties(family='sans-serif', weight='normal')
+        font = font_manager.FontProperties(family="sans-serif", weight="normal")
         fname = font_manager.findfont(font)
         fnt = ImageFont.truetype(fname, 16)
         color = (255, 255, 255, 255) if img.mode == "RGB" else 255
@@ -192,94 +199,31 @@ def read_roi_tracks(p):
 
 def track_ROI(
     archive,
-    frames: List[str],
-    roi_pts,
+    frames,
+    roi: List[Tuple],
     workdir,
     cmd,
     id_,
     exclusion_mask: Optional[Union[str, Path]] = None,
     reference_frame: Optional[str] = None,
+    nproc: Optional[int] = None,
     **kwargs,
 ):
     """Track an ROI through a list of frames
 
-    ROIs should be drawn in the reference frame.  If no reference frame is provided,
-    it is assumed to be the first frame in `frames`.
-
-    kwargs are passed directly to `register()`.
-
-    """
-    archive = Path(archive)
-    frames = [Path(f).name for f in frames]
-    if reference_frame is None:
-        reference_frame = frames[0]
-    workdir = Path(workdir)
-    size = get_frame_size(archive)
-    mask = mask_from_xy(roi_pts, size)
-    if exclusion_mask is not None:
-        exclusion_mask = Image.open(exclusion_mask).convert("L")
-        mask.paste(Image.new("L", size, 0), mask=exclusion_mask)
-    p_mask = workdir / f"{id_}_-_mask.tiff"
-    mask.save(p_mask)
-    # Copy the images
-    if archive.is_dir():
-        # Re-use the existing image directory
-        dir_images = archive
-    elif archive.suffix == ".zip":
-        # Extract the needed images
-        dir_images = clean_dir(workdir / f"{id_}_-_images")
-        with ZipFile(archive) as a:
-            for frame in frames:
-                with open(dir_images / frame, "wb") as f:
-                    f.write(a.read(frame))
-    else:
-        raise ValueError("Image archive must be a zip file or a directory.")
-    dir_affines = clean_dir(workdir / f"{id_}_-_affines")
-    dir_tracks = clean_dir(workdir / f"{id_}_-_tracks")
-
-    def process_frame(frame, initial_affine: Optional[Union[Path, str]], logf):
-        p_def = dir_images / frame
-        p_ref = dir_images / reference_frame
-        if frame == reference_frame:
-            affine = np.eye(3)
-            nm = str(Path(reference_frame).with_suffix("").name)
-            p_affine = dir_affines / f"{nm}_to_{nm}_0GenericAffine.mat"
-            write_affine(affine, p_affine)
-        else:
-            p_affine, cmd_out = register(
-                p_ref, p_def, p_mask, dir_affines, cmd, initial_affine, **kwargs
-            )
-            logf.write(" ".join([shlex.quote(c) for c in cmd_out]) + "\n")
-            affine = read_affine(p_affine)
-        vertices, center = transformed_roi(roi_pts, affine=affine)
-        img = plot_roi(p_def, vertices, center)
-        img.save(dir_tracks / frame)
-        info = {
-            "Name": frame,
-            "Image": os.path.relpath(dir_images / frame, workdir),
-            "Affine": str(Path(p_affine).relative_to(workdir)),
-            "ROI centroid": center,
-        }
-        return info
-
-    # Add all registration data to frame info table
-    info_table = []
-    p_affine = {}  # frame → path of affine
-    plan = plan_registration(frames, reference_frame)
-    p_log = workdir / f"{id_}_-_commands.log"
-    with open(p_log, "w", encoding="utf-8", buffering=1) as logf:
-        for frame, initializer in plan:
-            if initializer is not None:
-                # The registration plan is assumed to always do the initializer
-                # frame's registration before its affine needs to be used to
-                # initialize another frame's registration.
-                initial_affine = p_affine[initializer]
-            else:
-                initial_affine = None
-            row = process_frame(frame, initial_affine, logf)
-            info_table.append(row)
-            p_affine[frame] = workdir / row["Affine"]
-    return DataFrame(info_table).sort_index()
+    This is a convenience function for calling track_ROIs() with a single ROI"""
+    return track_ROIs(
+        archive,
+        frames,
+        {"ROI": roi},
+        workdir,
+        cmd,
+        id_,
+        exclusion_mask,
+        reference_frame,
+        nproc,
+        **kwargs,
+    )
 
 
 def track_ROIs(
@@ -288,72 +232,148 @@ def track_ROIs(
     rois: Dict[str, List[Tuple]],
     workdir,
     cmd,
-    sid,
+    id_,
     exclusion_mask: Optional[Union[str, Path]] = None,
     reference_frame: Optional[str] = None,
-    nproc: Optional[int] = None,
+    nproc: int = 1,
     **kwargs,
 ):
-    """Track multiple ROIs through a list of frames
+    """Track ROIs through a list of frames
 
-    kwargs are passed directly to register().
+    ROIs should be drawn in the reference frame.  If no reference frame is specified,
+    it is assumed to be the first frame in `frames`.
+
+    kwargs are passed directly to `register()`.
 
     """
-    archive = Path(archive)
+    workdir = Path(workdir)
+    # Sanitize list of frames
+    frames = [Path(f).name for f in frames]
+    # Assume reference frame is first frame unless otherwise specified
     if reference_frame is None:
         reference_frame = frames[0]
     # Extract images from zip archive once up-front, if necessary
-    if archive.suffix == ".zip":
+    archive = Path(archive)
+    if archive.is_dir():
+        dir_images = archive
+    elif archive.suffix == ".zip":
         # Images are in a .zip archive
-        dir_images = clean_dir(workdir / f"{sid}_-_images")
+        dir_images = clean_dir(workdir / f"{id_}_-_images")
         with ZipFile(archive) as a:
             for frame in frames:
                 with open(dir_images / frame, "wb") as f:
                     f.write(a.read(frame))
     else:
-        # Assume images are already in a plain directory (other archive types are not
-        # supported)
-        dir_images = archive
-
-    def process_roi(roi):
-        nm, pts = roi
-        info = track_ROI(
-            dir_images,
-            frames,
-            pts,
-            workdir,
-            cmd,
-            f"{sid}_-_ROI={nm}",
-            exclusion_mask=exclusion_mask,
-            reference_frame=reference_frame,
-            **kwargs,
-        )
-        info = info.rename({"ROI centroid": f"{nm} centroid"}, axis=1)
-        info = info.rename({"Affine": f"{nm} affine"}, axis=1)
-        return info
-
-    # Plot all ROIs, with labels, in reference frame
+        raise ValueError("Image archive must be a zip file or a directory.")
+    # Get metadata about images
+    frame_size = get_frame_size(archive)
+    if exclusion_mask is not None:
+        exclusion_mask = Image.open(exclusion_mask).convert("L")
+    # Create masks
+    mask_image = {}
+    if exclusion_mask is not None:
+        exclusion_mask = Image.open(exclusion_mask).convert("L")
+    for nm, roi in rois.items():
+        m = mask_from_xy(roi, frame_size)
+        if exclusion_mask is not None:
+            m.paste(Image.new("L", frame_size, 0), mask=exclusion_mask)
+        mask_image[nm] = m
+        p = workdir / f"{id_}_-_roi={nm}_-_mask.tiff"
+        m.save(p)
+    # Set up data structures for ROI tracking in all frames
+    all_tracks = defaultdict(dict)
+    frame_order = plan_registration(frames, reference_frame)
+    queue = {nm: copy(frame_order[::-1]) for nm in rois}
+    affines = {nm: {} for nm in rois}  # dict of roi name → dict of frame → affine
+    # Handle reference frame
+    ## Plot all ROIs, with labels, in reference frame
+    dir_ROI_tracks = clean_dir(workdir / f"{id_}_-_all_ROIs_-_tracks")
     roi_label_img = Image.open(dir_images / reference_frame)
     for nm, pts in rois.items():
         plot_roi(roi_label_img, pts, np.mean(pts, axis=0), nm)
     ref_name = Path(reference_frame).with_suffix("").name
-    roi_label_img.save(workdir / f"{sid}_-_all_ROIs_-_{ref_name}.png")
-    # Track all ROIs in turn
-    if nproc is None:
-        tracks = list(map(process_roi, rois.items()))
-    else:
-        with ProcessPool(nproc) as pool:
-            tracks = pool.map(process_roi, rois.items())
+    roi_label_img.save(dir_ROI_tracks / f"{ref_name}.png")
+    ## Create affines for reference frame
+    for nm in rois:
+        affine = np.eye(3)
+        frame = str(Path(reference_frame).with_suffix("").name)
+        dir_affines = clean_dir(workdir / f"{id_}_-_roi={nm}_-_affines")
+        p_affine = dir_affines / f"{frame}_to_{frame}_0GenericAffine.mat"
+        write_affine(affine, p_affine)
+
+    def register_roi(frame, roi_name, initial_affine: Optional[Path], logf):
+        p_def = dir_images / frame
+        p_ref = dir_images / reference_frame
+        p_mask = workdir / f"{id_}_-_roi={roi_name}_-_mask.tiff"
+        dir_affines = workdir / f"{id_}_-_roi={roi_name}_-_affines"
+        p_affine, cmd_out = register(
+            p_ref, p_def, p_mask, dir_affines, cmd, initial_affine, **kwargs
+        )
+        logf.write(" ".join([shlex.quote(c) for c in cmd_out]) + "\n")
+        affine = read_affine(p_affine)
+        vertices, center = transformed_roi(rois[roi_name], affine=affine)
+        info = {
+            "Name": frame,
+            "Image": os.path.relpath(dir_images / frame, workdir),
+            "ROI": roi_name,
+            "Affine": str(Path(p_affine).relative_to(workdir)),
+            "Centroid": center,
+        }
+        return info
+
+    def get_init_affine(init_frame, roi_name, affines=affines):
+        if init_frame is not None:
+            init_affine = affines[roi_name][init_frame]
+        else:
+            init_affine = None
+        return init_affine
+
+    p_log = workdir / f"{id_}_-_commands.log"
+    futures = set()
+    rois_completed = defaultdict(int)  # dict: frame → # rois done
+    with open(p_log, "w", encoding="utf-8", buffering=1) as logf:
+        with ThreadPoolExecutor(max_workers=nproc) as executor:
+            for nm in rois:
+                frame, init_frame = queue[nm].pop()
+                init_affine = get_init_affine(init_frame, nm)
+                futures.add(executor.submit(register_roi, frame, nm, init_affine, logf))
+            while futures:
+                done, futures = concurrent.futures.wait(
+                    futures, return_when=concurrent.futures.FIRST_COMPLETED
+                )
+                for future in done:
+                    result = future.result()
+                    affines[result["ROI"]][result["Name"]] = workdir / result["Affine"]
+                    all_tracks[(result["Name"], result["Image"])].update(
+                        {
+                            f"{result['ROI']} centroid": result["Centroid"],
+                            f"{result['ROI']} affine": result["Affine"],
+                        }
+                    )
+                    # If there are more frames to run, run them
+                    if queue[result["ROI"]]:
+                        frame, init_frame = queue[result["ROI"]].pop()
+                        init_affine = get_init_affine(init_frame, result["ROI"])
+                        futures.add(
+                            executor.submit(
+                                register_roi, frame, result["ROI"], init_affine, logf
+                            )
+                        )
+                    rois_completed[result["Name"]] += 1
+                    # If a frame was completed, plot the result
+                    if rois_completed[result["Name"]] == len(rois):
+                        img = Image.open(workdir / result["Image"])
+                        for nm, roi in rois.items():
+                            A = read_affine(affines[nm][result["Name"]])
+                            img = plot_roi(img, *transformed_roi(roi, A), name=nm)
+                        img.save(
+                            dir_ROI_tracks
+                            / Path(result["Image"]).with_suffix(".png").name
+                        )
     # Tabulate all ROI tracks together
-    all_tracks = tracks[0].set_index("Name")
-    for t in tracks[1:]:
-        col = [c for c in t.columns if (c.endswith("centroid") or c.endswith("affine"))]
-        all_tracks = all_tracks.join(t.set_index("Name")[col])
-    all_tracks.reset_index(inplace=True)
-    # Plot all ROI tracks together
-    dir_all_ROIs = clean_dir(workdir / f"{sid}_-_all_ROIs_tracks")
-    plot_rois(rois, all_tracks, workdir, dir_all_ROIs)
-    return all_tracks
+    table = DataFrame.from_dict(all_tracks, orient="index").reset_index()
+    table = table.rename({"level_0": "Name", "level_1": "Image"}, axis=1)
+    return table
 
 
 def transformed_roi(boundary: Iterable[Tuple[Number, Number]], affine=None):
