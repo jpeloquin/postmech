@@ -5,9 +5,14 @@ from uncertainties import ufloat
 
 
 def fix_pint_registry(ureg: pint.registry.UnitRegistry):
+    # Workaround for https://github.com/hgrecco/pint/issues/1304
+    redef_oaction = ureg._on_redefinition
+    ureg._on_redefinition = "ignore"
+    # Pixels should not have a fixed physical length by default
     # https://github.com/hgrecco/pint/issues/1396
     ureg.define("@alias pixel = px")
     assert len(ureg("px").compatible_units()) == 0
+    ureg._on_redefinition = redef_oaction
     return ureg
 
 
