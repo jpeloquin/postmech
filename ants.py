@@ -179,12 +179,12 @@ def plot_rois(
         nm_img = rois_table.loc[i, "Name"]
         p_img = root / rois_table.loc[i, "Image"]
         img = Image.open(p_img)
-        for k in roi_names:
-            roi = rois[k]
-            p_affine = root / rois_table.loc[i, f"{k} affine"]
+        for roi_name in roi_names:
+            roi = rois[roi_name]
+            p_affine = root / rois_table.loc[i, f"{roi_name} affine"]
             A = read_affine(p_affine)
-            img = plot_roi(img, *transformed_roi(roi, A))
-        img.save(dir_out / nm_img)
+            plot_roi(img, *transformed_roi(roi, A), name=roi_name)
+        img.save((dir_out / nm_img).with_suffix(".png"))
 
 
 def read_roi_tracks(p):
