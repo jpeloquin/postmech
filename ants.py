@@ -10,6 +10,7 @@ import subprocess
 from typing import Dict, Iterable, List, Optional, Tuple, Union
 from zipfile import ZipFile
 
+import cv2
 from matplotlib import font_manager
 import numpy as np
 from numpy.typing import NDArray
@@ -382,3 +383,19 @@ def transformed_roi(boundary: Iterable[Tuple[Number, Number]], affine=None):
     pts = [(affine @ [x, y, 1])[:2] for x, y in boundary]
     center = np.mean(pts, axis=0)
     return pts, center
+
+
+def make_video(table, dir_tracks):
+    dir_tracks = Path(dir_tracks)
+    dir_out = dir_tracks.parent
+    p_img = (dir_tracks / table.loc[0, "Name"]).with_suffix(".png")
+    size = Image.open(str(p_img)).size
+    video = cv2.VideoWriter(
+        str(dir_tracks).removesuffix("_-_tracks") + ".mp4",
+        cv2.VideoWriter_fourcc(*"mp4v"),
+        15,
+        size,
+    )
+    for nm in table["Name"]:
+        p_img = Path(dir_tracks / nm).with_suffix(".png")
+        video.write(cv2.imread(str(p_img)))
