@@ -198,6 +198,52 @@ def read_roi_tracks(p):
     return tab
 
 
+def recreate_tracks_table(dir_parent: Union[str, Path], sid: str, rois):
+    """Recreate the {sid}_-_all_ROIs.csv table directly from ANTs output
+
+    :parameter dir_parent: Directory that contains the tracking output:
+    {sid}_-_all_ROIs_-_tracks, {sid}_-_commands.log, etc.
+
+    :parameter sid: The specimen ID.
+
+    :parameter rois: Dictionary of ROI name → list-like of (x, y) ROI vertices.
+
+    It should not be necessary to use recreate_tracks_table() in normal use, but it is
+    useful when trying to salvage some results after something went wrong.
+
+    """
+    dir_parent = Path(dir_parent)
+    dir_images = dir_parent / f"{sid}_-_images"
+    p_out = dir_parent / f"{sid}_-_all_ROIs.csv"
+
+    def parse_dirname(nm):
+        id_, roi_name, type_ = nm.split("_-_")
+        return {"id": id_, "roi": roi_name.removeprefix("roi="), "type": type_}
+
+    # Find out which frames exist
+    frame_data = {}
+    for p in dir_images.iterdir():
+        frame_data[p.name] = {"Name": p.name, "Image": p.relative_to(dir_parent)}
+    # Find out which ROIs exist
+    roi_names = []
+    for dir_affine in dir_parent.glob(f"{sid}_-_roi=*_-_affines"):
+        roi_names.append(parse_dirname(dir_affine.name)["roi"])
+    # Match affines to frames and calculate centroids
+    for roi_name in roi_names:
+        dir_affine = dir_parent / f"{sid}_-_roi={roi_name}_-_affines"
+        for p_affine in dir_affine.iterdir():
+            if not p_affine.suffix == ".mat":
+                continue
+            moving_frame = f"{p_affine.name.split('_to_')[0]}.tiff"
+            frame_data[moving_frame][f"{roi_name} affine"] = p_affine.relative_to(dir_parent)
+            affine = read_affine(p_affine)
+            pts, centroid = transformed_roi(rois[roi_name], affine=affine)
+            frame_data[moving_frame][f"{roi_name} centroid"] = centroid
+    frame_data = [record for record in frame_data.values()]
+    table = pd.DataFrame.from_records(frame_data).sort_values("Name")
+    table.to_csv(p_out, index=False)
+
+
 def track_ROI(
     archive,
     frames,
