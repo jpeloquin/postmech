@@ -134,6 +134,11 @@ def bose_data(fpath):
             scan_istart = i + 2
             i += 2
             continue
+        # Skip cycle counts
+        if line[0].endswith("Counts"):
+            i += 1
+            continue
+        # The line contains data
         if len(line) > 0:
             data["Scan"].append(scan)
             for k, v in zip(exported_vars, line):
