@@ -17,7 +17,8 @@ def fix_pint_registry(ureg: pint.registry.UnitRegistry):
 
 
 # packages must use pint.get_application_registry to integrate properly with user code
-ureg = fix_pint_registry(pint.get_application_registry())
+# Need to use .get() as of 0.18, see https://github.com/hgrecco/pint/issues/1568
+ureg = fix_pint_registry(pint.get_application_registry().get())
 
 
 def parse(s: str) -> ureg.Quantity:
