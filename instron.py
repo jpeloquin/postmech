@@ -11,12 +11,20 @@ def read_rawdata(pth, thousands_sep=","):
     when a parameters block or results table is included in the header of the file.
     Actually achieving this is a work in progres.
 
+    Bluehill 3 column names are translated to Bluehill Universal column names:
+    - "Extension" becomes "Displacement"
+    - "Load" becomes "Force"
+
     """
+
     def bluehill_universal_header(ln):
         return [s.replace("(", "[").replace(")", "]") for s in ln]
 
     def bluehill_3_header(ln0, ln1):
-        colnames = [s.strip() for s in ln0]
+        colnames = [
+            s.strip().replace("Load", "Force").replace("Extension", "Displacement")
+            for s in ln0
+        ]
         units = [s.strip().lstrip("('").rstrip(")'") for s in ln1]
         header = [f"{nm} [{u}]" for nm, u in zip(colnames, units)]
         return header
@@ -46,7 +54,9 @@ def read_rawdata(pth, thousands_sep=","):
                 data[k].append(v)
     data = pd.DataFrame.from_dict(data)
     if data.empty:
-        raise Exception("Empty data.  Most likely read_rawdata has a bug and failed to find the raw data table.")
+        raise Exception(
+            "Empty data.  Most likely read_rawdata has a bug and failed to find the raw data table."
+        )
     return data
 
 
