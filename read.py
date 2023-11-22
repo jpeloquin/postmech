@@ -7,6 +7,7 @@ from zipfile import ZipFile
 import pandas as pd
 import numpy as np
 
+from .instron import _strip_sep as strip_sep
 from .unit import ureg
 
 
@@ -169,10 +170,6 @@ def instron_data(fpath, thousands_sep=","):
     warnings.warn(
         "instron_data is deprecated; use instron_rawdata", category=DeprecationWarning
     )
-
-    def strip_sep(s):
-        return s.replace(thousands_sep, "")
-
     t = []
     d = []
     p = []
@@ -200,9 +197,9 @@ def instron_data(fpath, thousands_sep=","):
         assert units[dind] == "(mm)"
         assert units[pind] == "(N)"
         for row in reader:
-            t.append(float(strip_sep(row[0])))
-            d.append(float(strip_sep(row[dind])) / 1000)  # mm -> m
-            p.append(float(strip_sep(row[pind])))
+            t.append(float(strip_sep(row[0], thousands_sep)))
+            d.append(float(strip_sep(row[dind], thousands_sep)) / 1000)  # mm -> m
+            p.append(float(strip_sep(row[pind], thousands_sep)))
     t = np.array(t)
     d = np.array(d)
     p = np.array(p)
@@ -225,9 +222,6 @@ def instron_rawdata(fpath, thousands_sep=","):
     the pattern "Channel (unit)".
 
     """
-
-    def strip_sep(s):
-        return s.replace(thousands_sep, "")
 
     def strip_line(line):
         """Remove trailing blank entries from line and strip leading and trailing
@@ -258,7 +252,7 @@ def instron_rawdata(fpath, thousands_sep=","):
                 v = ln[1]
                 if len(ln) > 2:
                     unit = ln[2].strip()
-                    v = float(strip_sep(v)) * ureg(unit)
+                    v = float(strip_sep(v), thousands_sep) * ureg(unit)
                 metadata[k] = v
         except StopIteration:
             raise ValueError(
@@ -277,7 +271,7 @@ def instron_rawdata(fpath, thousands_sep=","):
         data = {header[i]: [] for i in range(len(header))}
         for row in reader:
             for i, k in enumerate(header):
-                v = float(strip_sep(row[i]))
+                v = float(strip_sep(row[i], thousands_sep))
                 data[k].append(v)
     data = pd.DataFrame.from_dict(data)
     return metadata, data
