@@ -1,7 +1,32 @@
 import csv
+import re
 
 import numpy as np
 import pandas as pd
+
+
+def read_parameters(pth):
+    """Return parameters list from an Instron .csv file
+
+    Intended to work with both Bluehill Universal and Bluehill 3 raw data formats, even
+    when a parameters block or results table is included in the header of the file.
+
+    """
+    parameters = {}
+    in_list = False
+    with open(pth, "r", newline="") as f:
+        reader = csv.reader(f, delimiter=",", quotechar='"')
+        for ln in reader:
+            if not ln:
+                continue
+            m = re.match(r"^(.+) : (.+)", ln[0])
+            if m is not None:
+                in_list = True  # we're in a parameters list
+                parameters[ln[0]] = ln[1]
+            if in_list and m is None:
+                in_list = False
+                break
+    return parameters
 
 
 def read_rawdata(pth, thousands_sep=","):
