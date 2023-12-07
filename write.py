@@ -2,8 +2,6 @@ import csv
 import os
 import subprocess
 
-from .unit import ureg
-
 
 def measurement_csv(m, f, digits=7):
     """Write measurement to file object.

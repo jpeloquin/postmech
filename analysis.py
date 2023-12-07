@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 
 from . import vic2d
 from . import read
-from .unit import ureg
+from .unit import get_ureg
 from .images import (
     decode_impath,
     image_id,
@@ -372,7 +372,7 @@ def ramp_data(test):
 
 def calculate_area(tab):
     import pygismo
-
+    ureg = get_ureg()
     areas = ppygismo.area_by_pass(tab)
     area = areas.mean() * ureg("mm**2")
     area = area.plus_minus(areas.std())

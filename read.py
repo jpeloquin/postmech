@@ -8,7 +8,7 @@ import pandas as pd
 import numpy as np
 
 from .instron import _strip_sep as strip_sep
-from .unit import ureg
+from .unit import get_ureg
 
 
 def open_archive_file(pth, mode="rt"):
@@ -53,6 +53,7 @@ def measurement_csv(fpath):
     value,s.d.,"unit"
 
     """
+    ureg = get_ureg()
     with open(fpath, "r", newline="") as f:
         reader = csv.reader(f)
         for line in reader:
@@ -222,6 +223,7 @@ def instron_rawdata(fpath, thousands_sep=","):
     the pattern "Channel (unit)".
 
     """
+    ureg = get_ureg()
 
     def strip_line(line):
         """Remove trailing blank entries from line and strip leading and trailing

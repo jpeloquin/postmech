@@ -16,13 +16,15 @@ def fix_pint_registry(ureg: pint.registry.UnitRegistry):
     return ureg
 
 
-# packages must use pint.get_application_registry to integrate properly with user code
-# Need to use .get() as of 0.18, see https://github.com/hgrecco/pint/issues/1568
-ureg = fix_pint_registry(pint.get_application_registry().get())
+def get_ureg() -> pint.registry.UnitRegistry:
+    # packages must use pint.get_application_registry to integrate properly with user code
+    # Need to use .get() as of 0.18, see https://github.com/hgrecco/pint/issues/1568
+    return fix_pint_registry(pint.get_application_registry().get())
 
 
-def parse(s: str) -> ureg.Quantity:
+def parse(s: str) -> pint.Quantity:
     """Parse a value with uncertainty and units, e.g. '1 ± 0.5 mm'"""
+    ureg = get_ureg()
     m = re.match(
         r"(?P<value>[0-9.]+)\s*(?:±|\+/-)\s*(?P<uncertainty>[0-9.]+)?\s*(?P<units>\S+)?",
         s,

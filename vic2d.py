@@ -21,7 +21,6 @@ import matplotlib.image as mpimg
 from lxml import etree as ET
 from shapely.geometry import Point
 
-from .unit import ureg
 from .images import image_id
 from lbplt.colormaps import choose_cmap, cmap_div
 

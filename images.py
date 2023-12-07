@@ -12,7 +12,7 @@ from PIL import Image, ImageDraw
 from uncertainties import ufloat
 
 from . import instron, read
-from .unit import ureg
+from .unit import get_ureg
 
 
 def lowercase_colname(s):
@@ -173,6 +173,7 @@ def tabulate_images_and_mechdata(imdir, mech_data_file=None, vic2d_dir=None):
 
 def image_scale(fpath):
     """Reads `image_scale.csv` and calculates mm/px"""
+    ureg = get_ureg()
     with open(fpath, "r") as f:
         reader = csv.reader(f)
         for line in reader:
