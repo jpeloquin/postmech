@@ -112,7 +112,6 @@ class MechanicalTest(object):
         return self
 
     def stress_at(self, t):
-
         """Return stress at time t."""
         return np.interp(t, self.time, self.stress)
 
@@ -372,6 +371,7 @@ def ramp_data(test):
 
 def calculate_area(tab):
     import pygismo
+
     ureg = get_ureg()
     areas = ppygismo.area_by_pass(tab)
     area = areas.mean() * ureg("mm**2")

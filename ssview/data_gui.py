@@ -318,7 +318,6 @@ class DataView(QtGui.QWidget):
 
 
 class ImageStack(QObject):
-
     # imlist : list of (time, image) tuples, where image is a numpy
     #          array
     times = None

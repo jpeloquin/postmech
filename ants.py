@@ -235,7 +235,9 @@ def recreate_tracks_table(dir_parent: Union[str, Path], sid: str, rois):
             if not p_affine.suffix == ".mat":
                 continue
             moving_frame = f"{p_affine.name.split('_to_')[0]}.tiff"
-            frame_data[moving_frame][f"{roi_name} affine"] = p_affine.relative_to(dir_parent)
+            frame_data[moving_frame][f"{roi_name} affine"] = p_affine.relative_to(
+                dir_parent
+            )
             affine = read_affine(p_affine)
             pts, centroid = transformed_roi(rois[roi_name], affine=affine)
             frame_data[moving_frame][f"{roi_name} centroid"] = centroid

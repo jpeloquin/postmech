@@ -63,7 +63,9 @@ def get_frame_size(archive):
                 image = Image.open(p)
                 break
         else:
-            raise ValueError("No .tiff, .tif, or .png files found in image archive directory.")
+            raise ValueError(
+                "No .tiff, .tif, or .png files found in image archive directory."
+            )
     elif archive.suffix == ".zip":
         with ZipFile(archive) as a:
             image = Image.open(io.BytesIO(a.read(a.namelist()[0])))

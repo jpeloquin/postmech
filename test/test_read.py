@@ -5,7 +5,6 @@ from postmech import read
 
 
 class BoseTxtTestTimed(unittest.TestCase):
-
     fpath = os.path.join(os.path.dirname(__file__), "fixtures", "bose_export.TXT")
 
     def test_bose_data(self):
@@ -17,7 +16,6 @@ class BoseTxtTestTimed(unittest.TestCase):
 
 
 class BoseTxtTestBlock(unittest.TestCase):
-
     fpath = os.path.join(os.path.dirname(__file__), "fixtures", "bose_export_block.TXT")
 
     def test_bose_data(self):
