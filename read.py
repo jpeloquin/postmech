@@ -2,6 +2,7 @@ import csv
 import io
 import os
 import warnings
+from typing import Tuple
 from zipfile import ZipFile
 
 import pandas as pd
@@ -236,31 +237,50 @@ def instron_rawdata(fpath, thousands_sep=","):
             else:
                 i -= 1
 
+    def is_metadata_line(ln: Tuple[str]):
+        """Return True if line looks like a metadata line
+
+        :param t: Line as a tuple of strings, one value per cell, with leading/trailing
+        whitespace already stripped.
+
+        """
+        split = ln[0].split(" : ")
+        if len(split) == 2 and len(split[0] > 0) and len(split[1] > 0):
+            return True
+        return False
+
     metadata = {}
     with open(fpath, "r", newline="") as f:
         reader = csv.reader(f, delimiter=",", quotechar='"')
-        # Read metadata rows
-        try:
-            # Remove trailing blank entries.  Bluehill will not generate these,
-            # but if a user re-saves a Bluehill CSV file the spreadsheet software
-            # will make all rows have the same number of columns, and there doesn't
-            # seem to be any particular need to be picky.
-            while True:
-                ln = strip_line(reader.__next__())
-                if not ln:
-                    # Once we reach a blank line, the metadata block has ended
-                    break
-                k = ln[0]
-                v = ln[1]
-                if len(ln) > 2:
-                    unit = ln[2].strip()
-                    v = float(strip_sep(v, thousands_sep)) * ureg(unit)
-                metadata[k] = v
-        except StopIteration:
-            raise ValueError(
-                "Could not find end of header (a blank line) in {}".format(fpath)
-            )
-        # Read column names for data table
+        ln0 = strip_line(reader.__next__())
+        if is_metadata_line(ln0):
+            # Read metadata rows
+            f.seek(0)  # reset reader
+            try:
+                # Remove trailing blank entries.  Bluehill will not generate these,
+                # but if a user re-saves a Bluehill CSV file the spreadsheet software
+                # will make all rows have the same number of columns, and there doesn't
+                # seem to be any particular need to be picky.
+                while True:
+                    ln = strip_line(reader.__next__())
+                    if not ln:
+                        # Once we reach a blank line, the metadata block has ended
+                        break
+                    k = ln[0]
+                    v = ln[1]
+                    if len(ln) > 2:
+                        unit = ln[2].strip()
+                        breakpoint()
+                        v = float(strip_sep(v, thousands_sep)) * ureg(unit)
+                    metadata[k] = v
+            except StopIteration:
+                raise ValueError(
+                    "Could not find end of header (a blank line) in {}".format(fpath)
+                )
+        else:
+            f.seek(0)  # reset reader
+
+        # Read data table
         header = reader.__next__()
         # Check that the row we think is the header row really is the
         # header row

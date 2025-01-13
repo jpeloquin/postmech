@@ -1,10 +1,11 @@
-import unittest, os
+import os
+from unittest import TestCase
 import numpy.testing as npt
 
 from postmech import read
 
 
-class BoseTxtTestTimed(unittest.TestCase):
+class BoseTxtTestTimed(TestCase):
     fpath = os.path.join(os.path.dirname(__file__), "fixtures", "bose_export.TXT")
 
     def test_bose_data(self):
@@ -15,7 +16,7 @@ class BoseTxtTestTimed(unittest.TestCase):
         npt.assert_almost_equal(data["Position [mm]"].iat[-1], 5.998793)
 
 
-class BoseTxtTestBlock(unittest.TestCase):
+class BoseTxtTestBlock(TestCase):
     fpath = os.path.join(os.path.dirname(__file__), "fixtures", "bose_export_block.TXT")
 
     def test_bose_data(self):
