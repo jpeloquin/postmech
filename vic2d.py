@@ -74,7 +74,7 @@ def read_table(f):
     df = pd.read_csv(
         f,
         skipinitialspace=True,
-        dtype={"x": np.int, "y": np.int},
+        dtype={"x": int, "y": int},
         skip_blank_lines=True,
     )
     # ^ vic2d adds an extra line at the end, which gets read as a row
