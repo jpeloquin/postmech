@@ -1,27 +1,22 @@
-import csv
-from io import BytesIO, StringIO
+from io import BytesIO
 import re, os
 import math
 from os import path
 from zipfile import ZipFile
-from collections import defaultdict
 import hashlib
 import warnings
 
 import numpy as np
 import numpy.ma as ma
+import shapely
 from numpy.linalg import inv
 import pandas as pd
-from scipy.ndimage.interpolation import map_coordinates
-from scipy.sparse import coo_matrix
-from PIL import Image
+from scipy.ndimage import map_coordinates
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
 from lxml import etree as ET
 from shapely.geometry import Point
 
-from .images import image_id
 from lbplt.colormaps import choose_cmap, cmap_div
 
 
@@ -356,7 +351,7 @@ def read_strain_components(pth):
 
 def plot_strains(csvpath):
     """Return three-panel strain fields figure from a Vic-2D .csv file."""
-    df = readv2dcsv(csvpath)
+    df = pd.concat(read_csv(csvpath))
 
     # Find extent of region that has values
     xmin = min(df["x"])
