@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Functions for rearranging and organizing test data.
-
-"""
+"""Functions for rearranging and organizing test data."""
 import os, json
 
 

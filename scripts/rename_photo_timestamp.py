@@ -7,6 +7,7 @@ with the time taken from the image's DateTimeOriginal EXIF tag.  No time
 zone conversion is performed.
 
 """
+
 import argparse
 from datetime import datetime
 from pathlib import Path
